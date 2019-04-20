@@ -4,7 +4,7 @@ const chalk = require('chalk');
 const { log } = require('../../utils');
 
 async function subscribeToNewMessages(credentials) {
-  log.message('credentials ' + log.object(credentials));
+  log.message(`credentials ${log.object(credentials)}`);
   const agent = new Agent(credentials);
 
   agent.on('connected', () => {
@@ -23,7 +23,7 @@ async function subscribeToNewMessages(credentials) {
         .filter(p => p.id === agent.agentId)[0];
       const myRole = participant && participant.role;
 
-      console.log(chalk.green(`particpant: ${participant} - myRole: ${myRole}`));
+      console.log(chalk.green(`participant: ${log.object(participant)} - myRole: ${myRole}`));
     });
   });
 }

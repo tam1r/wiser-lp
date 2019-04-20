@@ -11,11 +11,8 @@ async function initService(connection) {
     // start listening for new messages
     subscribeToNewMessages({
       username: user.username,
-      accountId: user.liveperson_accountid,
-      appKey: user.liveperson_appkey,
-      secret: user.liveperson_secret,
-      accessToken: user.liveperson_accesstoken,
-      accessTokenSecret: user.liveperson_accesstokensecret,
+      accountId: user.accountId,
+      password: user.password,
     });
     log.info(`Started service for user: ${user.username}`);
   });

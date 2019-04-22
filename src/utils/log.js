@@ -4,11 +4,11 @@ const currentTime = () => chalk.gray(`> ${(new Date()).toGMTString()} | `);
 const object = obj => JSON.stringify(obj, null, 2);
 
 const message = (msg) => {
-  console.log(chalk.white(msg));
+  console.log(currentTime() + chalk.white(msg));
 };
 
 const success = (msg) => {
-  console.log(chalk.bold.green(msg));
+  console.log(currentTime() + chalk.bold.green(msg));
 };
 
 const info = (msg) => {

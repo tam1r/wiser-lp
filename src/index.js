@@ -8,7 +8,7 @@ const schema = require('schm');
 const app = express();
 
 const db = require('./db');
-const { subscribeToNewMessages } = require('./api/live-person');
+const livePersonServiceInit = require('./service/live-person');
 const initService = require('./initService');
 const schemas = require('./schemas');
 const { log } = require('./utils');
@@ -28,7 +28,7 @@ const PORT = 3000;
       .then((credentials) => {
         // TODO: check if user with these credentials exist
         db.addClient(connection, credentials); // Add client to the database
-        subscribeToNewMessages(credentials); // Listen for new messages
+        livePersonServiceInit(credentials); // Listen for new messages
         res.status(200).send('Success');
       }).catch((error) => {
         log.error(`Error validating credentials:\n${log.object(error)}`);

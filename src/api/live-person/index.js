@@ -1,5 +1,9 @@
-const subscribeToNewMessages = require('./subscribeToNewMessages');
+const {
+  connectAgent,
+  subscribeToConversations,
+} = require('./functions');
 
 module.exports = {
-  subscribeToNewMessages,
+  connectAgent,
+  subscribeToConversations,
 };

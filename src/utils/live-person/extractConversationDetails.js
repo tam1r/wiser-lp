@@ -1,11 +1,14 @@
 const { log } = require('../index');
 
 function extractConversationDetails(change) {
-  // TODO: extract relevant metadata and return it
-  const { participants, state } = change.result.conversationDetails;
-  const { convId: conversationId } = change.result;
+  return new Promise(async (resolve) => {
+    const { participants, state } = change.result.conversationDetails;
+    const { convId: conversationId } = change.result;
 
-  log.info(`Conversation details:\nConversationId: ${conversationId}\nParticipants: ${log.object(participants)}\nState: ${state}`);
+    log.info(`Conversation details:\nConversationId: ${conversationId}\nParticipants: ${log.object(participants)}\nState: ${state}`);
+
+    resolve(change.result.conversationDetails);
+  });
 }
 
 module.exports = extractConversationDetails;

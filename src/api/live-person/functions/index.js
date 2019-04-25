@@ -1,11 +1,9 @@
-const connectAgent = require('./connectAgent');
-const subscribeToConversations = require('./subscribeToConversations');
 const generateURLForDownloadFile = require('./generateURLForDownloadFile');
-const sendMessage = require('./sendMessage');
+const extractConversationDetails = require('./extractConversationDetails');
+const extractMessageDetails = require('./extractMessageDetails');
 
 module.exports = {
-  connectAgent,
-  subscribeToConversations,
   generateURLForDownloadFile,
-  sendMessage,
+  extractConversationDetails,
+  extractMessageDetails,
 };

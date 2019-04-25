@@ -1,13 +1,16 @@
-const { log } = require('../index');
+const { log } = require('../../../utils');
 
-function extractMessageDetails(agent, change) {
+function extractMessageDetails(change) {
   return new Promise((resolve) => {
     const {
       convId,
       lastContentEventNotification: notification,
     } = change.result;
+    let userId = 'NOT_FOUND';
 
-    const userId = notification.originatorPId;
+    if (notification.originatorPId) {
+      userId = notification.originatorPId;
+    }
 
     const { contentType, message } = notification.event;
 

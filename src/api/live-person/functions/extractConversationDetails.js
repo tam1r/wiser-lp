@@ -1,4 +1,4 @@
-const { log } = require('../index');
+const { log } = require('../../../utils');
 
 function extractConversationDetails(change) {
   return new Promise(async (resolve) => {

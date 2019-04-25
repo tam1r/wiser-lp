@@ -5,11 +5,17 @@ function generateURLForDownloadFile(agent, relativePath) {
         reject(error);
       }
 
-      const { temp_url_sig: tmpUrlSig, temp_url_expires: tmpUrlExp } = response.queryParams;
+      console.log('generate URL for download response: ', response);
 
-      const fileURL = `${relativePath}?temp_url_sig=${tmpUrlSig}&temp_url_expires=${tmpUrlExp}`;
+      if (typeof response === 'object') {
+        const { temp_url_sig: tmpUrlSig, temp_url_expires: tmpUrlExp } = response.queryParams;
 
-      resolve(fileURL);
+        const fileURL = `https://z2.objectstorage.liveperson.net${relativePath}?temp_url_sig=${tmpUrlSig}&temp_url_expires=${tmpUrlExp}`;
+
+        resolve(fileURL);
+      } else {
+        resolve(response);
+      }
     });
   });
 }

@@ -1,9 +1,12 @@
 require('dotenv').config();
 
 const bodyParser = require('body-parser');
+const swagger = require('swagger-ui-express');
 const express = require('express');
 const morgan = require('morgan');
 const schema = require('schm');
+const docs = require('./docs/swagger.json');
+const docsConfig = require('./docs/config');
 
 const app = express();
 
@@ -24,6 +27,7 @@ let agents;
   app.use(morgan('tiny'));
   app.use(bodyParser.json());
   app.use(bodyParser.urlencoded({ extended: true }));
+  app.use('/docs', swagger.serve, swagger.setup(docs, docsConfig));
 
   app.post('/register-client', async (req, res) => {
     const validatedCredentials = await schema.validate(req.body, schemas.user)
@@ -40,7 +44,7 @@ let agents;
     // Init liveperson service for recently created user
     agents[validatedCredentials.accountId] = livePersonServiceInit(validatedCredentials);
 
-    res.status(200).send('Success');
+    res.status(200).send('Register success');
   });
 
   app.post('/send-message', async (req, res) => {

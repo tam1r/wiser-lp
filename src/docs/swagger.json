@@ -1,0 +1,121 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "WiserLP API Docs",
+    "version": "v1"
+  },
+  "tags": [
+    {
+      "name": "Endpoints"
+    }
+  ],
+  "paths": {
+    "/register-client": {
+      "post": {
+        "tags": [
+          "Endpoints"
+        ],
+        "operationId": "register-client",
+        "summary": "Register a new client",
+        "parameters": [
+          {
+            "name": "User",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/User"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Register success"
+          },
+          "400": {
+            "description": "Bad request"
+          }
+        }
+      }
+    },
+    "/send-message": {
+      "post": {
+        "tags": [
+          "Endpoints"
+        ],
+        "operationId": "send-message",
+        "summary": "Send a message to any open conversation",
+        "parameters": [
+          {
+            "name": "User",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/User"
+            }
+          },
+          {
+            "name": "Message",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/Message"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Message sent"
+          },
+          "400": {
+            "description": "Bad request"
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "User": {
+      "required": [
+        "accountId",
+        "username",
+        "password"
+      ],
+      "properties": {
+        "accountId": {
+          "type": "string"
+        },
+        "username": {
+          "type": "string"
+        },
+        "password": {
+          "type": "string"
+        }
+      },
+      "example": {
+        "accountId": "1234567890",
+        "username": "John Doe",
+        "password": "eoD nhoJ"
+      }
+    },
+    "Message": {
+      "required": [
+        "dialogId",
+        "contentType",
+        "message"
+      ],
+      "properties": {
+        "dialogId": {
+          "type": "string"
+        },
+        "contentType": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        }
+      },
+      "example": {
+        "dialogId": "ABCDE-MNBV-01234",
+        "contentType": "text/plain",
+        "message": "Hello from a POST request!"
+      }
+    }
+  }
+}

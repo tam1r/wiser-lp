@@ -5,19 +5,13 @@ function addClient(connection, credentials) {
     INSERT INTO
     users (
       username,
-      liveperson_accountid,
-      liveperson_appkey,
-      liveperson_secret,
-      liveperson_accesstoken,
-      liveperson_accesstokensecret
+      password,
+      accountId
     )
     VALUES (
       '${credentials.username}',
-      '${credentials.liveperson_accountid}',
-      '${credentials.liveperson_appkey}',
-      '${credentials.liveperson_secret}',
-      '${credentials.liveperson_accesstoken}',
-      '${credentials.liveperson_accesstokensecret}'
+      '${credentials.password}',
+      '${credentials.accountId}'
     )
   `;
 

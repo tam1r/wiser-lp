@@ -1,24 +1,26 @@
 const { log } = require('./utils');
 const { promisifyQuery } = require('./db');
-const { subscribeToNewMessages } = require('./api/live-person');
+const livePersonServiceInit = require('./service/live-person');
 
 async function initService(connection) {
+  const agents = {};
+
   log.info('Starting wiser-lp service');
 
   // retrieve all users
   const response = await promisifyQuery(connection, 'SELECT * FROM users');
-  response.forEach((user) => {
-    // start listening for new messages
-    subscribeToNewMessages({
+  response.forEach(async (user) => {
+    agents[user.accountId] = await livePersonServiceInit({
       username: user.username,
-      accountId: user.liveperson_accountid,
-      appKey: user.liveperson_appkey,
-      secret: user.liveperson_secret,
-      accessToken: user.liveperson_accesstoken,
-      accessTokenSecret: user.liveperson_accesstokensecret,
+      accountId: user.accountId,
+      password: user.password,
     });
-    log.info(`Started service for user: ${user.username}`);
+
+    log.info(`Started liveperson service for user: ${user.username}`);
   });
+
+  log.message('Agents accountIds:', Object.keys(agents));
+  return agents;
 }
 
 module.exports = initService;

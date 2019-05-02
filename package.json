@@ -27,10 +27,10 @@
     "mysql": "^2.17.0",
     "node-agent-sdk": "^1.1.5",
     "schm": "^0.4.1",
-    "swagger-ui-express": "^4.0.2"
+    "swagger-ui-express": "^4.0.2",
+    "dotenv": "^7.0.0"
   },
   "devDependencies": {
-    "dotenv": "^7.0.0",
     "eslint": "^5.16.0",
     "eslint-config-airbnb-base": "^13.1.0",
     "eslint-plugin-import": "^2.17.2"

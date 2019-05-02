@@ -3,9 +3,14 @@ const Users = {
   fields: `
     id INT NOT NULL PRIMARY KEY AUTO_INCREMENT,
     username VARCHAR(2048) NOT NULL,
-    accountId VARCHAR(2048) NOT NULL,
-    password VARCHAR(2048) NOT NULL,
-    zapier_apikey VARCHAR(2048)
+    liveperson_accountid VARCHAR(2048) NOT NULL,
+    liveperson_appkey VARCHAR(2048) NOT NULL,
+    liveperson_secret VARCHAR(2048) NOT NULL,
+    liveperson_accesstoken VARCHAR(2048) NOT NULL,
+    liveperson_accesstokensecret VARCHAR(2048) NOT NULL,
+    zapier_apikey VARCHAR(2048),
+    new_conversation_webhook VARCHAR(2048),
+    new_file_in_conversation_webhook VARCHAR(2048)
   `,
 };
 

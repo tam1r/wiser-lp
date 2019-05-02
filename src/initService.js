@@ -9,17 +9,25 @@ async function initService(connection) {
 
   // retrieve all users
   const response = await promisifyQuery(connection, 'SELECT * FROM users');
-  response.forEach(async (user) => {
-    agents[user.accountId] = await livePersonServiceInit({
-      username: user.username,
-      accountId: user.accountId,
-      password: user.password,
+
+  if (response.length) {
+    response.forEach(async (user) => {
+      const credentials = {
+        username: user.username,
+        accountId: user.liveperson_accountid,
+        appKey: user.liveperson_appkey,
+        secret: user.liveperson_secret,
+        accessToken: user.liveperson_accesstoken,
+        accessTokenSecret: user.liveperson_accesstokensecret,
+      };
+      agents[user.liveperson_accountid] = await livePersonServiceInit(credentials);
+
+      log.info(`Started liveperson service for user: ${user.username} | ${user.liveperson_accountid}`);
     });
+  } else {
+    log.message('No agents existing in the database');
+  }
 
-    log.info(`Started liveperson service for user: ${user.username}`);
-  });
-
-  log.message('Agents accountIds:', Object.keys(agents));
   return agents;
 }
 

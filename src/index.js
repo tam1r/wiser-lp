@@ -42,7 +42,15 @@ let agents;
     db.addClient(connection, validatedCredentials);
 
     // Init liveperson service for recently created user
-    agents[validatedCredentials.accountId] = livePersonServiceInit(validatedCredentials);
+    const credentials = {
+      username: validatedCredentials.username,
+      accountId: validatedCredentials.liveperson_accountid,
+      appKey: validatedCredentials.liveperson_appkey,
+      secret: validatedCredentials.liveperson_secret,
+      accessToken: validatedCredentials.liveperson_accesstoken,
+      accessTokenSecret: validatedCredentials.liveperson_accesstokensecret,
+    };
+    agents[validatedCredentials.liveperson_accountid] = livePersonServiceInit(credentials);
 
     res.status(200).send('Register success');
   });
@@ -62,7 +70,7 @@ let agents;
         res.status(400).send(error);
       });
 
-    agents[validatedCredentials.accountId].sendMessage(validatedMessage);
+    agents[validatedCredentials.liveperson_accountid].sendMessage(validatedMessage);
 
     res.status(200).send('Message sent');
   });

@@ -11,7 +11,7 @@ const docsConfig = require('./docs/config');
 const app = express();
 
 const db = require('./db');
-const livePersonServiceInit = require('./service/live-person');
+const WiserAgent = require('./api/live-person/WiserAgent');
 const initService = require('./initService');
 const schemas = require('./schemas');
 const { log } = require('./utils');
@@ -42,16 +42,21 @@ let agents;
     db.addClient(connection, validatedCredentials);
 
     // Init liveperson service for recently created user
+    const accountId = validatedCredentials.liveperson_accountid;
     const credentials = {
+      accountId,
       username: validatedCredentials.username,
-      accountId: validatedCredentials.liveperson_accountid,
       appKey: validatedCredentials.liveperson_appkey,
       secret: validatedCredentials.liveperson_secret,
       accessToken: validatedCredentials.liveperson_accesstoken,
       accessTokenSecret: validatedCredentials.liveperson_accesstokensecret,
     };
-    agents[validatedCredentials.liveperson_accountid] = livePersonServiceInit(credentials);
+    const webhooks = {
+      new_conversation_webhook: validatedCredentials.new_conversation_webhook,
+      new_file_in_conversation_webhook: validatedCredentials.new_file_in_conversation_webhook,
+    };
 
+    agents[accountId] = new WiserAgent(credentials, webhooks);
     res.status(200).send('Register success');
   });
 
@@ -71,7 +76,6 @@ let agents;
       });
 
     agents[validatedCredentials.liveperson_accountid].sendMessage(validatedMessage);
-
     res.status(200).send('Message sent');
   });
 

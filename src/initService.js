@@ -1,6 +1,6 @@
 const { log } = require('./utils');
 const { promisifyQuery } = require('./db');
-const livePersonServiceInit = require('./service/live-person');
+const WiserAgent = require('./api/live-person/WiserAgent');
 
 async function initService(connection) {
   const agents = {};
@@ -20,7 +20,11 @@ async function initService(connection) {
         accessToken: user.liveperson_accesstoken,
         accessTokenSecret: user.liveperson_accesstokensecret,
       };
-      agents[user.liveperson_accountid] = await livePersonServiceInit(credentials);
+      const webhooks = {
+        new_conversation_webhook: user.new_conversation_webhook,
+        new_file_in_conversation_webhook: user.new_file_in_conversation_webhook,
+      };
+      agents[user.liveperson_accountid] = new WiserAgent(credentials, webhooks);
 
       log.info(`Started liveperson service for user: ${user.username} | ${user.liveperson_accountid}`);
     });

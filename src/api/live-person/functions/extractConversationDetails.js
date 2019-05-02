@@ -1,13 +1,33 @@
-const { log } = require('../../../utils');
+const log = require('../../../utils/log');
+const retrieveUserMetadata = require('./retrieveUserMetadata');
 
-function extractConversationDetails(change) {
-  return new Promise(async (resolve) => {
-    const { participants, state } = change.result.conversationDetails;
-    const { convId: conversationId } = change.result;
+function extractConversationDetails(agent, change) {
+  return new Promise(async (resolve, reject) => {
+    const { result } = change;
+    const { conversationDetails, convId: conversationId } = result;
+    const { startTs, lastContentEventNotification } = conversationDetails;
+    let dialogId = 'ENOENT';
 
-    log.info(`Conversation details:\nConversationId: ${conversationId}\nParticipants: ${log.object(participants)}\nState: ${state}`);
+    if (lastContentEventNotification) {
+      ({ dialogId } = lastContentEventNotification);
+    }
 
-    resolve(change.result.conversationDetails);
+    const consumerId = conversationDetails.participants.filter(p => p.role === 'CONSUMER')[0].id;
+
+    agent.getUserProfile(consumerId, (error, response) => {
+      if (error) {
+        log.error(error);
+        reject(error);
+      }
+
+      resolve({
+        timestamp: (new Date(startTs)).toGMTString(),
+        phoneNumber: retrieveUserMetadata(response),
+        consumerId,
+        conversationId,
+        dialogId,
+      });
+    });
   });
 }
 

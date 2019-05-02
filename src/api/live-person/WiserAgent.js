@@ -5,12 +5,14 @@ const {
   generateURLForDownloadFile,
   extractConversationDetails,
   extractMessageDetails,
+  isConversationRecentlyCreated,
 } = require('./functions');
 
 class WiserAgent extends Agent {
-  constructor(conf) {
-    super(conf);
-    this.conf = conf;
+  constructor(credentials, webhooks) {
+    super(credentials);
+    this.conf = credentials;
+    this.webhooks = webhooks;
     this.consumerId = undefined;
     this.openConversations = {};
     this.init();
@@ -30,71 +32,80 @@ class WiserAgent extends Agent {
         },
       }, (error, response) => {
         if (error) {
-          log.error('Error sending message: ', error);
+          log.error(`Error sending message: ${log.object(error)}`);
           return;
         }
 
-        log.message('Send message response: ', response);
+        log.message(`Send message response: ${log.object(response)}`);
       });
     }
   }
 
   init() {
-    this.on('connected', (msg) => {
-      console.log(msg);
+    this.on('connected', () => {
       log.message(`Successfully connected agent with accountId: ${this.conf.accountId}`);
 
       // make the agent visibity to "online"
       this.setAgentState({ availability: 'ONLINE' });
 
-      this.subscribeExConversations({
-        agentIds: [this.agentId],
-        convState: ['OPEN'],
-      }, (error, response) => {
+      this.subscribeExConversations({ convState: ['OPEN'] }, (error, response) => {
         if (error) {
           log.error(error);
           return;
         }
 
-        log.message('subscribeExConversations ', this.conf.accountId || '', response);
+        log.success(
+          `Successfully subscribed to new conversations
+          subscriptionId: ${log.object(response.subscriptionId)}
+          accountId: ${this.conf.accountId}`,
+        );
       });
 
       this.subscribeRoutingTasks({});
 
-      // keep alive connection strategy
-      this.pingClock = setInterval(this.getClock, 30000);
+      this.pingClock = setInterval(this.getClock, 30000); // keep alive connection strategy
     });
 
     // Notification on changes in the open consversation list
     this.on('cqm.ExConversationChangeNotification', (notificationBody) => {
       notificationBody.changes.forEach(async (change) => {
-        const { convId } = change.result;
+        const { convId, conversationDetails } = change.result;
+        const { startTs } = conversationDetails;
 
         const messageDetails = await extractMessageDetails(change);
 
         if (messageDetails.type === 'hosted/file') {
           const fileURL = await generateURLForDownloadFile(this, messageDetails.relativePath);
-          await triggerWebhook('https://hooks.zapier.com/hooks/catch/1646904/7pk8w6/', { fileURL });
+          if (this.webhooks.new_file_in_conversation_webhook) {
+            await triggerWebhook(this.webhooks.new_file_in_conversation_webhook, { fileURL });
+            log.success(
+              `successfully triggered webhook: ${this.webhooks.new_file_in_conversation_webhook}
+              convId: ${convId}
+              accountId: ${this.conf.accountId}`,
+            );
+          }
           log.success(`Successfully generated download file URL!\nConvId:   ${convId}\nURL:      ${fileURL}`);
         }
 
-        if (change.type === 'UPSERT' && !this.openConversations[convId]) {
+        if (
+          change.type === 'UPSERT'
+          && !this.openConversations[convId]
+          && isConversationRecentlyCreated(startTs)
+        ) {
           // New conversation
           this.openConversations[convId] = {};
 
-          const conversationDetails = extractConversationDetails(change);
-          await triggerWebhook('https://hooks.zapier.com/hooks/catch/1646904/7pkzff/', conversationDetails);
-          log.success(`Successfully retrieved recently created conversation details!\nConvId:   ${convId}`);
+          const parsedConversationDetails = await extractConversationDetails(this, change);
 
-          this.consumerId = change.result.conversationDetails.participants.filter(p => p.role === 'CONSUMER')[0].id;
-          this.getUserProfile(this.consumerId, (error, response) => {
-            if (error) {
-              log.error(error);
-              return;
-            }
-
-            log.message(`New conversation!\n${log.object(response)}`);
-          });
+          if (this.webhooks.new_conversation_webhook) {
+            await triggerWebhook(this.webhooks.new_conversation_webhook, parsedConversationDetails);
+            log.success(
+              `successfully triggered webhook: ${this.webhooks.new_conversation_webhook}
+              accountId: ${this.conf.accountId}
+              convId: ${convId}
+              convDetails: ${log.object(parsedConversationDetails)}`,
+            );
+          }
 
           // This method is used to create a subscription for all of the Messaging Events in
           // a particular conversation. This includes messages sent by any participant in the
@@ -118,7 +129,7 @@ class WiserAgent extends Agent {
           delete this.openConversations[convId];
         } else {
           // something else happened
-          log.message(`Unhandled event occured in conversation: ${convId}\n${log.object(change)}`);
+          log.message(`Unhandled event occured in conversation: ${convId}`);
         }
       });
     });

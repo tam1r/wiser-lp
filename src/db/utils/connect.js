@@ -4,7 +4,9 @@ const { log } = require('../../utils');
 
 const credentials = {
   production: {
-
+    host: process.env.CLEARDB_DATABASE_URL,
+    user: process.env.CLEARDB_DATABASE_USER,
+    password: process.env.CLEARDB_DATABASE_PASSWORD,
   },
   development: {
     host: process.env.DEV_DB_HOST,
@@ -28,6 +30,8 @@ function connect() {
         log.error('Connection error:');
         log.message(log.object(err));
         reject(new Error('Error connecting to database'));
+      } else {
+        log.message(`Established connection with database: ${credentials.production.host}`);
       }
     });
 

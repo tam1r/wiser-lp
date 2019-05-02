@@ -73,25 +73,42 @@
   "definitions": {
     "User": {
       "required": [
-        "accountId",
         "username",
-        "password"
+        "liveperson_accountid",
+        "liveperson_appkey",
+        "liveperson_secret",
+        "liveperson_accesstoken",
+        "liveperson_accesstokensecret"
       ],
       "properties": {
-        "accountId": {
-          "type": "string"
-        },
         "username": {
           "type": "string"
         },
-        "password": {
+        "liveperson_accountid": {
+          "type": "string"
+        },
+        "liveperson_appkey": {
+          "type": "string"
+        },
+        "liveperson_secret": {
+          "type": "string"
+        },
+        "liveperson_accesstoken": {
+          "type": "string"
+        },
+		    "liveperson_accesstokensecret": {
           "type": "string"
         }
       },
       "example": {
-        "accountId": "1234567890",
         "username": "John Doe",
-        "password": "eoD nhoJ"
+        "liveperson_accountid": "1234567890",
+        "liveperson_appkey": "1234567890",
+        "liveperson_secret": "1234567890",
+        "liveperson_accesstoken": "1234567890",
+        "liveperson_accesstokensecret": "1234567890",
+        "new_conversation_webhook": "https://hooks.zapier.com/hooks/catch/1646904/73834/",
+        "new_file_in_conversation_webhook": "https://hooks.zapier.com/hooks/catch/1234443/234234/"
       }
     },
     "Message": {

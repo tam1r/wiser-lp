@@ -1,0 +1,38 @@
+{
+  "name": "wiser-lp",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "NODE_ENV=production node src/index.js",
+    "dev": "NODE_ENV=development node src/index.js",
+    "lint": "eslint . --max-warnings=0 && echo 'No linting errors ✔'"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tam1r/wiser-lp.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/tam1r/wiser-lp/issues"
+  },
+  "homepage": "https://github.com/tam1r/wiser-lp#readme",
+  "dependencies": {
+    "axios": "^0.18.0",
+    "body-parser": "^1.18.3",
+    "chalk": "^2.4.2",
+    "express": "^4.16.4",
+    "morgan": "^1.9.1",
+    "mysql": "^2.17.0",
+    "node-agent-sdk": "^1.1.5",
+    "schm": "^0.4.1",
+    "swagger-ui-express": "^4.0.2"
+  },
+  "devDependencies": {
+    "dotenv": "^7.0.0",
+    "eslint": "^5.16.0",
+    "eslint-config-airbnb-base": "^13.1.0",
+    "eslint-plugin-import": "^2.17.2"
+  }
+}

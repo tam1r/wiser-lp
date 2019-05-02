@@ -79,6 +79,10 @@ let agents;
     res.status(200).send('Message sent');
   });
 
+  app.get('/', (req, res) => {
+    res.status(200).send('WiserLP');
+  });
+
   app.listen(process.env.PORT || PORT, async () => {
     log.success('Server listening on port 3000!');
     agents = await initService(connection);

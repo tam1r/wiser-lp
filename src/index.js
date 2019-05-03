@@ -21,8 +21,17 @@ const PORT = 3000;
 let agents;
 
 (async () => {
-  const connection = await db.connect();
+  let connection = await db.connect();
+
   await db.setup(connection);
+
+  connection.on('error', (error) => {
+    if (error.code === 'PROTOCOL_CONNECTION_LOST') {
+      connection = db.connect();
+    } else {
+      throw error;
+    }
+  });
 
   app.use(morgan('tiny'));
   app.use(bodyParser.json());

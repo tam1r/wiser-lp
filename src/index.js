@@ -11,6 +11,7 @@ const docsConfig = require('./docs/config');
 const app = express();
 
 const db = require('./db');
+const handleDisconnect = require('./db/utils/handleDisconnect');
 const WiserAgent = require('./api/live-person/WiserAgent');
 const initService = require('./initService');
 const schemas = require('./schemas');
@@ -19,19 +20,13 @@ const { log } = require('./utils');
 const PORT = 3000;
 
 let agents;
+let connection;
 
 (async () => {
-  let connection = await db.connect();
+  connection = await db.connect();
 
   await db.setup(connection);
-
-  connection.on('error', (error) => {
-    if (error.code === 'PROTOCOL_CONNECTION_LOST') {
-      connection = db.connect();
-    } else {
-      throw error;
-    }
-  });
+  handleDisconnect(connection);
 
   app.use(morgan('tiny'));
   app.use(bodyParser.json());

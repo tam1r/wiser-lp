@@ -46,14 +46,11 @@ let connection;
     db.addClient(connection, validatedCredentials);
 
     // Init liveperson service for recently created user
-    const accountId = validatedCredentials.liveperson_accountid;
+    const { accountId } = validatedCredentials;
     const credentials = {
       accountId,
       username: validatedCredentials.username,
-      appKey: validatedCredentials.liveperson_appkey,
-      secret: validatedCredentials.liveperson_secret,
-      accessToken: validatedCredentials.liveperson_accesstoken,
-      accessTokenSecret: validatedCredentials.liveperson_accesstokensecret,
+      password: validatedCredentials.password,
     };
     const webhooks = {
       new_conversation_webhook: validatedCredentials.new_conversation_webhook,
@@ -79,7 +76,7 @@ let connection;
         res.status(400).send(error);
       });
 
-    agents[validatedCredentials.liveperson_accountid].sendMessage(validatedMessage);
+    agents[validatedCredentials.accountId].sendMessage(validatedMessage);
     res.status(200).send('Message sent');
   });
 

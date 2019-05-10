@@ -49,9 +49,13 @@ let connection;
     // Init liveperson service for recently created user
     const { accountId } = validatedCredentials;
     const credentials = {
-      accountId,
       username: validatedCredentials.username,
-      password: validatedCredentials.password,
+      password: validatedCredentials.liveperson_password,
+      accountId: validatedCredentials.liveperson_accountid,
+      appKey: validatedCredentials.liveperson_appkey,
+      secret: validatedCredentials.liveperson_secret,
+      accessToken: validatedCredentials.liveperson_accesstoken,
+      accessTokenSecret: validatedCredentials.liveperson_accesstokensecret,
     };
     const webhooks = {
       new_conversation_webhook: validatedCredentials.new_conversation_webhook,
@@ -59,6 +63,7 @@ let connection;
     };
 
     agents[accountId] = new WiserAgent(credentials, webhooks);
+    log.info(`Successfully registered user with credentials:\n ${log.object(credentials)}`);
     res.status(200).send('Register success');
   });
 

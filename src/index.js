@@ -82,6 +82,7 @@ let connection;
       });
 
     agents[validatedCredentials.accountId].sendMessage(validatedMessage);
+
     res.status(200).send('Message sent');
   });
 

@@ -7,7 +7,7 @@ function handleDisconnect(client) {
 
     const connection = await connect();
 
-    client = connection;
+    client = connection; // eslint-disable-line
     handleDisconnect(client);
   });
 }

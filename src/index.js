@@ -11,7 +11,7 @@ const docsConfig = require('./docs/config');
 const app = express();
 
 const db = require('./db');
-const handleDisconnect = require('./db/utils/handleDisconnect');
+const { handleDisconnect, keepAlive } = require('./db/utils');
 const WiserAgent = require('./api/live-person/WiserAgent');
 const initService = require('./initService');
 const schemas = require('./schemas');
@@ -27,6 +27,7 @@ let connection;
 
   await db.setup(connection);
   handleDisconnect(connection);
+  keepAlive(connection);
 
   app.use(morgan('tiny'));
   app.use(bodyParser.json());

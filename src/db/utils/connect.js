@@ -17,13 +17,7 @@ const credentials = {
 
 function connect() {
   return new Promise(async (resolve, reject) => {
-    let connection;
-
-    if (process.env.NODE_ENV === 'production') {
-      connection = mysql.createConnection(credentials.production);
-    } else {
-      connection = mysql.createConnection(credentials.development);
-    }
+    const connection = mysql.createConnection(credentials[`${process.env.NODE_ENV}`]);
 
     await connection.connect((err) => {
       if (err) {
@@ -31,7 +25,7 @@ function connect() {
         log.message(log.object(err));
         reject(new Error('Error connecting to database'));
       } else {
-        log.message(`Established connection with database: ${credentials.production.host}`);
+        log.message(`Established connection with host: ${credentials[`${process.env.NODE_ENV}`].host}`);
       }
     });
 

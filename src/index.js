@@ -81,7 +81,7 @@ let connection;
         res.status(400).send(error);
       });
 
-    agents[validatedCredentials.accountId].sendMessage(validatedMessage);
+    agents[validatedCredentials.liveperson_accountid].sendMessage(validatedMessage);
 
     res.status(200).send('Message sent');
   });

@@ -75,15 +75,17 @@ let connection;
         res.status(400).send(error);
       });
 
+    const { liveperson_accountid: accountId } = validatedCredentials;
+
     const validatedMessage = await schema.validate(message, schemas.message)
       .catch((error) => {
         log.error(`Error validating message:\n${log.object(error)}`);
         res.status(400).send(error);
       });
 
-    agents[validatedCredentials.liveperson_accountid].sendMessage(validatedMessage);
+    const response = await agents[accountId].sendMessage(validatedMessage);
 
-    res.status(200).send('Message sent');
+    res.status(response.code).send(response.message);
   });
 
   app.get('/', (req, res) => {

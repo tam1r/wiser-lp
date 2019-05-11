@@ -33,10 +33,17 @@ class WiserAgent extends Agent {
       }, (error, response) => {
         if (error) {
           log.error(`Error sending message: ${log.object(error)}`);
-          return;
+          return {
+            code: error.code,
+            message: error.body,
+          };
         }
 
         log.message(`Send message response: ${log.object(response)}`);
+        return {
+          code: 200,
+          message: 'Message sent',
+        };
       });
     }
   }

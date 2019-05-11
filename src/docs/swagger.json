@@ -138,7 +138,7 @@
       "example": {
       	"credentials": {
       		"username": "john@doe.com",
-      		"liveperson_accountId": "978654321",
+      		"liveperson_accountid": "978654321",
       		"password": "123441234123423!!!"
       	},
       	"message": {

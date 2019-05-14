@@ -84,9 +84,9 @@ let connection;
         res.status(400).send(error);
       });
 
-    const response = await agents[accountId].sendMessage(validatedMessage);
+    agents[accountId].sendMessage(validatedMessage);
 
-    res.status(response.code).send(response.message);
+    res.status(200).send('message scheduled');
   });
 
   app.get('/', (req, res) => {

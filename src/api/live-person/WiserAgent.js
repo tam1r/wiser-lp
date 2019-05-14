@@ -19,38 +19,40 @@ class WiserAgent extends Agent {
   }
 
   async sendMessage(params) {
-    const { dialogId, contentType, message } = params;
-    log.message(`Send message init, params:\n${log.object(params)}`);
+    return Promise(async (resolve) => {
+      const { dialogId, contentType, message } = params;
+      log.message(`Send message init, params:\n${log.object(params)}`);
 
-    if (contentType === 'text/plain') {
-      return this.publishEvent({
-        dialogId,
-        event: {
-          type: 'ContentEvent',
-          contentType,
-          message,
-        },
-      }, (error, response) => {
-        if (error) {
-          log.error(`Error sending message: ${log.object(error)}`);
-          return {
-            code: error.code,
-            message: error.body,
-          };
-        }
+      if (contentType === 'text/plain') {
+        await this.publishEvent({
+          dialogId,
+          event: {
+            type: 'ContentEvent',
+            contentType,
+            message,
+          },
+        }, (error, response) => {
+          if (error) {
+            log.error(`Error sending message: ${log.object(error)}`);
+            resolve({
+              code: error.code,
+              message: error.body,
+            });
+          }
 
-        log.message(`Send message response: ${log.object(response)}`);
-        return {
-          code: 200,
-          message: 'Message sent',
-        };
+          log.message(`Send message response: ${log.object(response)}`);
+          resolve({
+            code: 200,
+            message: 'Message sent',
+          });
+        });
+      }
+
+      resolve({
+        code: 405,
+        message: 'Method not supported',
       });
-    }
-
-    return {
-      code: 405,
-      message: 'Method not supported',
-    };
+    });
   }
 
   init() {

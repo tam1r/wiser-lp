@@ -19,7 +19,7 @@ class WiserAgent extends Agent {
   }
 
   async sendMessage(params) {
-    return Promise(async (resolve) => {
+    return new Promise(async (resolve) => {
       const { dialogId, contentType, message } = params;
       log.message(`Send message init, params:\n${log.object(params)}`);
 

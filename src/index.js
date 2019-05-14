@@ -67,7 +67,6 @@ let connection;
   });
 
   app.post('/send-message', async (req, res) => {
-    console.log(`/send-message request body: ${JSON.stringify(req.body)}`);
     const { credentials, message } = req.body;
 
     const validatedCredentials = await schema.validate(credentials, schemas.user)
@@ -85,8 +84,6 @@ let connection;
       });
 
     const response = await agents[accountId].sendMessage(validatedMessage);
-
-    console.log(`/send-message response: ${JSON.stringify(response)}`);
 
     res.status(response.code).send(response.message);
   });

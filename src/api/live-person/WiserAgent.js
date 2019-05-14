@@ -23,7 +23,7 @@ class WiserAgent extends Agent {
     log.message(`Send message init, params:\n${log.object(params)}`);
 
     if (contentType === 'text/plain') {
-      await this.publishEvent({
+      return this.publishEvent({
         dialogId,
         event: {
           type: 'ContentEvent',
@@ -46,6 +46,11 @@ class WiserAgent extends Agent {
         };
       });
     }
+
+    return {
+      code: 405,
+      message: 'Method not supported',
+    };
   }
 
   init() {

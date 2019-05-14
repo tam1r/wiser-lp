@@ -84,7 +84,10 @@ class WiserAgent extends Agent {
         if (messageDetails.type === 'hosted/file') {
           const fileURL = await generateURLForDownloadFile(this, messageDetails.relativePath);
           if (this.webhooks.new_file_in_conversation_webhook) {
-            await triggerWebhook(this.webhooks.new_file_in_conversation_webhook, { fileURL });
+            await triggerWebhook(this.webhooks.new_file_in_conversation_webhook, {
+              fileURL,
+              convId,
+            });
             log.success(
               `successfully triggered webhook: ${this.webhooks.new_file_in_conversation_webhook}
               convId: ${convId}

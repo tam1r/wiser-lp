@@ -86,6 +86,8 @@ let connection;
 
     const response = await agents[accountId].sendMessage(validatedMessage);
 
+    console.log(`/send-message response: ${JSON.stringify(response)}`);
+
     res.status(response.code).send(response.message);
   });
 

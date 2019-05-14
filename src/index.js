@@ -67,6 +67,7 @@ let connection;
   });
 
   app.post('/send-message', async (req, res) => {
+    console.log(`/send-message request body: ${JSON.stringify(req.body)}`);
     const { credentials, message } = req.body;
 
     const validatedCredentials = await schema.validate(credentials, schemas.user)

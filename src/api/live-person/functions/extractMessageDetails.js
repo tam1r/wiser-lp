@@ -8,7 +8,7 @@ function extractMessageDetails(change) {
     } = change.result;
     let userId = 'NOT_FOUND';
 
-    if (notification.originatorPId) {
+    if (notification && notification.originatorPId) {
       userId = notification.originatorPId;
     }
 

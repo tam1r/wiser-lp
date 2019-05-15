@@ -10,4 +10,5 @@ module.exports = schema({
   liveperson_accesstokensecret: { type: String, required: false },
   new_conversation_webhook: { type: String, required: false },
   new_file_in_conversation_webhook: { type: String, required: false },
+  user_identifier: { type: String, required: false },
 });

@@ -2,12 +2,12 @@ const schema = require('schm');
 
 module.exports = schema({
   username: { type: String, required: true },
+  liveperson_password: { type: String, required: false },
   liveperson_accountid: { type: String, required: true },
-  liveperson_appkey: { type: String, required: true },
-  liveperson_secret: { type: String, required: true },
-  liveperson_accesstoken: { type: String, required: true },
-  liveperson_accesstokensecret: { type: String, required: true },
-  zapier_apikey: { type: String, required: false },
+  liveperson_appkey: { type: String, required: false },
+  liveperson_secret: { type: String, required: false },
+  liveperson_accesstoken: { type: String, required: false },
+  liveperson_accesstokensecret: { type: String, required: false },
   new_conversation_webhook: { type: String, required: false },
   new_file_in_conversation_webhook: { type: String, required: false },
 });

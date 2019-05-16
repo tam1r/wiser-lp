@@ -19,26 +19,44 @@ class WiserAgent extends Agent {
   }
 
   async sendMessage(params) {
-    const { dialogId, contentType, message } = params;
-    log.message(`Send message init, params:\n${log.object(params)}`);
+    return new Promise(async (resolve) => {
+      const { dialogId, contentType, message } = params;
+      log.message(`Send message init, params:\n${log.object(params)}`);
 
-    if (contentType === 'text/plain') {
-      await this.publishEvent({
-        dialogId,
-        event: {
-          type: 'ContentEvent',
-          contentType,
-          message,
-        },
-      }, (error, response) => {
-        if (error) {
-          log.error(`Error sending message: ${log.object(error)}`);
-          return;
-        }
+      switch (contentType) {
+        case 'text/plain':
+          await this.publishEvent({
+            dialogId,
+            event: {
+              type: 'ContentEvent',
+              contentType,
+              message,
+            },
+          }, (error, response) => {
+            if (error) {
+              log.error(`Error sending message: ${log.object(error)}`);
+              resolve({
+                code: error.code,
+                message: error.body,
+              });
+            }
 
-        log.message(`Send message response: ${log.object(response)}`);
-      });
-    }
+            log.message(`Send message response: ${log.object(response)}`);
+            resolve({
+              code: 200,
+              message: 'Message sent',
+            });
+          });
+          break;
+
+        default:
+          resolve({
+            code: 405,
+            message: 'Method not supported',
+          });
+          break;
+      }
+    });
   }
 
   init() {
@@ -73,15 +91,21 @@ class WiserAgent extends Agent {
         const { startTs } = conversationDetails;
 
         const messageDetails = await extractMessageDetails(change);
+        const parsedConversationDetails = await extractConversationDetails(this, change);
 
         if (messageDetails.type === 'hosted/file') {
           const fileURL = await generateURLForDownloadFile(this, messageDetails.relativePath);
           if (this.webhooks.new_file_in_conversation_webhook) {
-            await triggerWebhook(this.webhooks.new_file_in_conversation_webhook, { fileURL });
+            await triggerWebhook(this.webhooks.new_file_in_conversation_webhook, {
+              fileURL,
+              convId,
+              convDetails: parsedConversationDetails,
+            });
             log.success(
               `successfully triggered webhook: ${this.webhooks.new_file_in_conversation_webhook}
               convId: ${convId}
-              accountId: ${this.conf.accountId}`,
+              accountId: ${this.conf.accountId}
+              convDetails: ${log.object(parsedConversationDetails)}`,
             );
           }
           log.success(`Successfully generated download file URL!\nConvId:   ${convId}\nURL:      ${fileURL}`);
@@ -94,8 +118,6 @@ class WiserAgent extends Agent {
         ) {
           // New conversation
           this.openConversations[convId] = {};
-
-          const parsedConversationDetails = await extractConversationDetails(this, change);
 
           if (this.webhooks.new_conversation_webhook) {
             await triggerWebhook(this.webhooks.new_conversation_webhook, parsedConversationDetails);

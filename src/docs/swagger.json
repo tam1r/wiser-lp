@@ -16,11 +16,12 @@
           "Endpoints"
         ],
         "operationId": "register-client",
-        "summary": "Register a new client",
+        "summary": "Register a new client, you can do so using both username/password or appkey/secret/accessToken/accessTokenSecret",
         "parameters": [
           {
             "name": "User",
             "in": "body",
+            "required": true,
             "schema": {
               "$ref": "#/definitions/User"
             }
@@ -45,15 +46,9 @@
         "summary": "Send a message to any open conversation",
         "parameters": [
           {
-            "name": "User",
-            "in": "body",
-            "schema": {
-              "$ref": "#/definitions/User"
-            }
-          },
-          {
             "name": "Message",
             "in": "body",
+            "required": true,
             "schema": {
               "$ref": "#/definitions/Message"
             }
@@ -74,14 +69,13 @@
     "User": {
       "required": [
         "username",
-        "liveperson_accountid",
-        "liveperson_appkey",
-        "liveperson_secret",
-        "liveperson_accesstoken",
-        "liveperson_accesstokensecret"
+        "liveperson_accountid"
       ],
       "properties": {
         "username": {
+          "type": "string"
+        },
+        "liveperson_password": {
           "type": "string"
         },
         "liveperson_accountid": {
@@ -112,26 +106,46 @@
       }
     },
     "Message": {
+      "type": "object",
       "required": [
-        "dialogId",
-        "contentType",
+        "credentials",
         "message"
       ],
       "properties": {
-        "dialogId": {
-          "type": "string"
-        },
-        "contentType": {
-          "type": "string"
+        "credentials": {
+          "$ref": "#/definitions/User"
         },
         "message": {
-          "type": "string"
+          "type": "object",
+          "required": [
+            "dialogId",
+            "contentType",
+            "message"
+          ],
+          "properties": {
+            "dialogId": {
+              "type": "string"
+            },
+            "contentType": {
+              "type": "string"
+            },
+            "message": {
+              "type": "string"
+            }
+          }
         }
       },
       "example": {
-        "dialogId": "ABCDE-MNBV-01234",
-        "contentType": "text/plain",
-        "message": "Hello from a POST request!"
+      	"credentials": {
+      		"username": "john@doe.com",
+      		"liveperson_accountid": "978654321",
+      		"password": "123441234123423!!!"
+      	},
+      	"message": {
+      		"dialogId": "ABCDE-12345-MNBVC-98765",
+      		"contentType": "text/plain",
+      		"message": "Hello!"
+      	}
       }
     }
   }

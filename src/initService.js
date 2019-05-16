@@ -12,14 +12,24 @@ async function initService(connection) {
 
   if (response.length) {
     response.forEach(async (user) => {
-      const credentials = {
-        username: user.username,
-        accountId: user.liveperson_accountid,
-        appKey: user.liveperson_appkey,
-        secret: user.liveperson_secret,
-        accessToken: user.liveperson_accesstoken,
-        accessTokenSecret: user.liveperson_accesstokensecret,
-      };
+      let credentials;
+      if (user.liveperson_password && user.liveperson_password !== '') { // login using username/password
+        credentials = {
+          username: user.username,
+          accountId: user.liveperson_accountid,
+          password: user.liveperson_password,
+        };
+      } else { // login using accesstoken
+        credentials = {
+          username: user.username,
+          accountId: user.liveperson_accountid,
+          appKey: user.liveperson_appkey,
+          secret: user.liveperson_secret,
+          accessToken: user.liveperson_accesstoken,
+          accessTokenSecret: user.liveperson_accesstokensecret,
+        };
+      }
+
       const webhooks = {
         new_conversation_webhook: user.new_conversation_webhook,
         new_file_in_conversation_webhook: user.new_file_in_conversation_webhook,

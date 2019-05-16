@@ -11,6 +11,7 @@ const docsConfig = require('./docs/config');
 const app = express();
 
 const db = require('./db');
+const { handleDisconnect, keepAlive } = require('./db/utils');
 const WiserAgent = require('./api/live-person/WiserAgent');
 const initService = require('./initService');
 const schemas = require('./schemas');
@@ -19,19 +20,14 @@ const { log } = require('./utils');
 const PORT = 3000;
 
 let agents;
+let connection;
 
 (async () => {
-  let connection = await db.connect();
+  connection = await db.connect();
 
   await db.setup(connection);
-
-  connection.on('error', (error) => {
-    if (error.code === 'PROTOCOL_CONNECTION_LOST') {
-      connection = db.connect();
-    } else {
-      throw error;
-    }
-  });
+  handleDisconnect(connection);
+  keepAlive(connection);
 
   app.use(morgan('tiny'));
   app.use(bodyParser.json());
@@ -51,10 +47,10 @@ let agents;
     db.addClient(connection, validatedCredentials);
 
     // Init liveperson service for recently created user
-    const accountId = validatedCredentials.liveperson_accountid;
     const credentials = {
-      accountId,
       username: validatedCredentials.username,
+      password: validatedCredentials.liveperson_password,
+      accountId: validatedCredentials.liveperson_accountid,
       appKey: validatedCredentials.liveperson_appkey,
       secret: validatedCredentials.liveperson_secret,
       accessToken: validatedCredentials.liveperson_accesstoken,
@@ -65,7 +61,8 @@ let agents;
       new_file_in_conversation_webhook: validatedCredentials.new_file_in_conversation_webhook,
     };
 
-    agents[accountId] = new WiserAgent(credentials, webhooks);
+    agents[validatedCredentials.liveperson_accountid] = new WiserAgent(credentials, webhooks);
+    log.info(`Successfully registered user with credentials:\n ${log.object(credentials)}`);
     res.status(200).send('Register success');
   });
 
@@ -78,14 +75,17 @@ let agents;
         res.status(400).send(error);
       });
 
+    const { liveperson_accountid: accountId } = validatedCredentials;
+
     const validatedMessage = await schema.validate(message, schemas.message)
       .catch((error) => {
         log.error(`Error validating message:\n${log.object(error)}`);
         res.status(400).send(error);
       });
 
-    agents[validatedCredentials.liveperson_accountid].sendMessage(validatedMessage);
-    res.status(200).send('Message sent');
+    const response = await agents[accountId].sendMessage(validatedMessage);
+
+    res.status(response.code).send(response.message);
   });
 
   app.get('/', (req, res) => {

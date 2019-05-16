@@ -6,23 +6,21 @@ function extractMessageDetails(change) {
       convId,
       lastContentEventNotification: notification,
     } = change.result;
-    let userId = 'NOT_FOUND';
 
-    if (notification.originatorPId) {
-      userId = notification.originatorPId;
-    }
+    if (notification) {
+      const userId = notification.originatorPId || 'NOT_FOUND';
+      const { contentType, message } = notification.event;
 
-    const { contentType, message } = notification.event;
+      if (contentType === 'text/plain') {
+        log.info(`New text message!\nConversation id: ${convId}\nDialogId: ${notification.dialogId}\nFrom userId: ${userId}\nMessage: ${message}`);
+        resolve({ type: contentType });
+      }
 
-    if (contentType === 'text/plain') {
-      log.info(`New text message!\nConversation id: ${convId}\nDialogId: ${notification.dialogId}\nFrom userId: ${userId}\nMessage: ${message}`);
-      resolve({ type: contentType });
-    }
-
-    if (contentType === 'hosted/file') {
-      const { relativePath } = message;
-      log.info(`New media message!\nConversation id: ${convId}\nDialogId: ${notification.dialogId}\nFrom userId: ${userId}\nRelative Path: ${relativePath}`);
-      resolve({ type: contentType, relativePath });
+      if (contentType === 'hosted/file') {
+        const { relativePath } = message;
+        log.info(`New media message!\nConversation id: ${convId}\nDialogId: ${notification.dialogId}\nFrom userId: ${userId}\nRelative Path: ${relativePath}`);
+        resolve({ type: contentType, relativePath });
+      }
     }
   });
 }

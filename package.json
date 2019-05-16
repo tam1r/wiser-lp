@@ -18,6 +18,12 @@
     "url": "https://github.com/tam1r/wiser-lp/issues"
   },
   "homepage": "https://github.com/tam1r/wiser-lp#readme",
+  "husky": {
+    "hooks": {
+      "pre-commit": "npm run lint",
+      "pre-push": "npm run lint"
+    }
+  },
   "dependencies": {
     "axios": "^0.18.0",
     "body-parser": "^1.18.3",

@@ -16,7 +16,7 @@ const WiserAgent = require('./api/live-person/WiserAgent');
 const initService = require('./initService');
 const schemas = require('./schemas');
 const { log } = require('./utils');
-
+const uuidv1 = require('uuid/v1');
 const PORT = 3000;
 
 let agents;
@@ -43,6 +43,8 @@ let connection;
 
     // TODO: check if user with these credentials exist
 
+    // Add unique identifier to user
+    validatedCredentials.user_identifier = await uuidv1();
     // Add client to the database
     db.addClient(connection, validatedCredentials);
 
@@ -63,7 +65,7 @@ let connection;
 
     agents[validatedCredentials.liveperson_accountid] = new WiserAgent(credentials, webhooks);
     log.info(`Successfully registered user with credentials:\n ${log.object(credentials)}`);
-    res.status(200).send('Register success');
+    res.status(200).send({message : 'Register success', user_identifier : validatedCredentials.user_identifier});
   });
 
   app.post('/send-message', async (req, res) => {

@@ -11,7 +11,8 @@ const Users = {
     liveperson_accesstokensecret VARCHAR(512),
     zapier_apikey VARCHAR(2048),
     new_conversation_webhook VARCHAR(2048),
-    new_file_in_conversation_webhook VARCHAR(2048)
+    new_file_in_conversation_webhook VARCHAR(2048),
+    user_identifier VARCHAR(256) NOT NULL
   `,
 };
 

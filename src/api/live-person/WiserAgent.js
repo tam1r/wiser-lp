@@ -1,12 +1,10 @@
 const { Agent } = require('node-agent-sdk');
-const { triggerWebhook } = require('../zapier/functions');
-const { log } = require('../../utils');
-const {
-  generateURLForDownloadFile,
-  extractConversationDetails,
-  extractMessageDetails,
-  isConversationRecentlyCreated,
-} = require('./functions');
+const { log, triggerWebhook } = require('../../utils');
+const Utils = require('./utils');
+
+const reconnectInterval = 5; // seconds
+const reconnectAttempts = 35;
+const reconnectRatio = 1.25; // ratio to determine reconnect exponential back-off
 
 class WiserAgent extends Agent {
   constructor(credentials, webhooks) {
@@ -61,6 +59,7 @@ class WiserAgent extends Agent {
 
   init() {
     this.on('connected', () => {
+      clearTimeout(this._retryConnection); // eslint-disablel
       log.message(`Successfully connected agent with accountId: ${this.conf.accountId}`);
 
       // make the agent visibity to "online"
@@ -90,11 +89,11 @@ class WiserAgent extends Agent {
         const { convId, conversationDetails } = change.result;
         const { startTs } = conversationDetails;
 
-        const messageDetails = await extractMessageDetails(change);
-        const parsedConversationDetails = await extractConversationDetails(this, change);
+        const messageDetails = await Utils.extractMessageDetails(change);
+        const parsedConversationDetails = await Utils.extractConversationDetails(this, change);
 
         if (messageDetails.type === 'hosted/file') {
-          const fileURL = await generateURLForDownloadFile(this, messageDetails.relativePath);
+          const fileURL = await Utils.generateURLForDownloadFile(this, messageDetails.relativePath);
           if (this.webhooks.new_file_in_conversation_webhook) {
             await triggerWebhook(this.webhooks.new_file_in_conversation_webhook, {
               fileURL,
@@ -114,7 +113,7 @@ class WiserAgent extends Agent {
         if (
           change.type === 'UPSERT'
           && !this.openConversations[convId]
-          && isConversationRecentlyCreated(startTs)
+          && Utils.isConversationRecentlyCreated(startTs)
         ) {
           // New conversation
           this.openConversations[convId] = {};
@@ -156,15 +155,29 @@ class WiserAgent extends Agent {
       });
     });
 
+    this._reconnect = (delay = reconnectInterval, attempt = 1) => {
+      this._retryConnection = setTimeout(() => {
+        log.info(`Attempting to reconnect agent ${this.conf.username} - attempt n ${attempt}`);
+
+        this.reconnect();
+
+        if (++attempt <= reconnectAttempts) { // eslint-disable-line
+          this._reconnect(reconnectInterval * reconnectRatio, attempt);
+        }
+      }, delay * 1000);
+    };
+
     this.on('error', (error) => {
       log.error('Error: ', error);
+      if (error && error.code === 401) {
+        this._reconnect();
+      }
     });
 
     this.on('closed', (data) => {
-      // For production environments ensure that you implement reconnect logic according to
-      // liveperson's retry policy guidelines: https://developers.liveperson.com/guides-retry-policy.html
       log.error('Socket closed: ', data);
       clearInterval(this.pingClock);
+      this._reconnect();
     });
   }
 }

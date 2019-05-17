@@ -1,12 +1,6 @@
 const { Agent } = require('node-agent-sdk');
-const { triggerWebhook } = require('../zapier/functions');
-const { log } = require('../../utils');
-const {
-  generateURLForDownloadFile,
-  extractConversationDetails,
-  extractMessageDetails,
-  isConversationRecentlyCreated,
-} = require('./functions');
+const { log, triggerWebhook } = require('../../utils');
+const Utils = require('./utils');
 
 class WiserAgent extends Agent {
   constructor(credentials, webhooks) {
@@ -90,11 +84,11 @@ class WiserAgent extends Agent {
         const { convId, conversationDetails } = change.result;
         const { startTs } = conversationDetails;
 
-        const messageDetails = await extractMessageDetails(change);
-        const parsedConversationDetails = await extractConversationDetails(this, change);
+        const messageDetails = await Utils.extractMessageDetails(change);
+        const parsedConversationDetails = await Utils.extractConversationDetails(this, change);
 
         if (messageDetails.type === 'hosted/file') {
-          const fileURL = await generateURLForDownloadFile(this, messageDetails.relativePath);
+          const fileURL = await Utils.generateURLForDownloadFile(this, messageDetails.relativePath);
           if (this.webhooks.new_file_in_conversation_webhook) {
             await triggerWebhook(this.webhooks.new_file_in_conversation_webhook, {
               fileURL,
@@ -114,7 +108,7 @@ class WiserAgent extends Agent {
         if (
           change.type === 'UPSERT'
           && !this.openConversations[convId]
-          && isConversationRecentlyCreated(startTs)
+          && Utils.isConversationRecentlyCreated(startTs)
         ) {
           // New conversation
           this.openConversations[convId] = {};

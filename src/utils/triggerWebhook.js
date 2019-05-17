@@ -1,5 +1,5 @@
 const axios = require('axios');
-const { log } = require('../../../utils');
+const log = require('./log');
 
 function triggerWebhook(url, body) {
   if (process.env.NODE_ENV === 'production') {

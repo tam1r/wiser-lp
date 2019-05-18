@@ -13,21 +13,20 @@ const app = express();
 const db = require('./db');
 const { handleDisconnect, keepAlive } = require('./db/utils');
 const WiserAgent = require('./api/live-person/WiserAgent');
-const initService = require('./initService');
+const AgentsCluster = require('./service/AgentsCluster.js');
 const schemas = require('./schemas');
 const { log } = require('./utils');
 
 const PORT = 3000;
-
-let agents;
 let connection;
 
 (async () => {
   connection = await db.connect();
-
   await db.setup(connection);
+
   handleDisconnect(connection);
   keepAlive(connection);
+  const AgentsClusterService = new AgentsCluster(connection);
 
   app.use(morgan('tiny'));
   app.use(bodyParser.json());
@@ -47,10 +46,11 @@ let connection;
     db.addClient(connection, validatedCredentials);
 
     // Init liveperson service for recently created user
+    const accountId = validatedCredentials.liveperson_accountid;
     const credentials = {
+      accountId,
       username: validatedCredentials.username,
       password: validatedCredentials.liveperson_password,
-      accountId: validatedCredentials.liveperson_accountid,
       appKey: validatedCredentials.liveperson_appkey,
       secret: validatedCredentials.liveperson_secret,
       accessToken: validatedCredentials.liveperson_accesstoken,
@@ -61,7 +61,8 @@ let connection;
       new_file_in_conversation_webhook: validatedCredentials.new_file_in_conversation_webhook,
     };
 
-    agents[validatedCredentials.liveperson_accountid] = new WiserAgent(credentials, webhooks);
+    AgentsClusterService.agents[accountId] = new WiserAgent(credentials, webhooks);
+
     log.info(`Successfully registered user with credentials:\n ${log.object(credentials)}`);
     res.status(200).send('Register success');
   });
@@ -83,7 +84,7 @@ let connection;
         res.status(400).send(error);
       });
 
-    const response = await agents[accountId].sendMessage(validatedMessage);
+    const response = await AgentsClusterService.agents[accountId].sendMessage(validatedMessage);
 
     res.status(response.code).send(response.message);
   });
@@ -94,6 +95,5 @@ let connection;
 
   app.listen(process.env.PORT || PORT, async () => {
     log.success(`Server listening on port ${process.env.PORT || PORT}!`);
-    agents = await initService(connection);
   });
 })();

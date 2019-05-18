@@ -2,6 +2,7 @@ require('dotenv').config();
 
 const bodyParser = require('body-parser');
 const swagger = require('swagger-ui-express');
+const Sentry = require('@sentry/node');
 const express = require('express');
 const morgan = require('morgan');
 const schema = require('schm');
@@ -16,6 +17,10 @@ const WiserAgent = require('./api/live-person/WiserAgent');
 const AgentsCluster = require('./service/AgentsCluster.js');
 const schemas = require('./schemas');
 const { log } = require('./utils');
+
+if (process.env.NODE_ENV === 'production') {
+  Sentry.init({ dsn: process.env.SENTRY_DSN });
+}
 
 const PORT = 3000;
 let connection;

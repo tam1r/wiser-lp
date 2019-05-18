@@ -83,6 +83,21 @@ class WiserAgent extends Agent {
       this.pingClock = setInterval(this.getClock, 30000); // keep alive connection strategy
     });
 
+    this.on('routing.RoutingTaskNotification', (body) => {
+      body.changes.forEach((c) => {
+        if (c.type === 'UPSERT') {
+          c.result.ringsDetails.forEach((r) => {
+            if (r.ringState === 'WAITING') {
+              this.updateRingState({
+                ringId: r.ringId,
+                ringState: 'ACCEPTED',
+              }, (e, resp) => console.log(resp));
+            }
+          });
+        }
+      });
+    });
+
     // Notification on changes in the open consversation list
     this.on('cqm.ExConversationChangeNotification', (notificationBody) => {
       notificationBody.changes.forEach(async (change) => {

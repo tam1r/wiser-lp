@@ -10,12 +10,12 @@ function generateURLForDownloadFile(agent, relativePath) {
       console.log('generate URL for download response: ', response);
 
       if (typeof response === 'object') {
-        const { temp_url_sig: tmpUrlSig } = response.queryParams;
+        const { temp_url_sig: tmpUrlSig, temp_url_expires: tmpUrlExp } = response.queryParams;
 
         const today = moment();
-        const tomorrow = moment(today).add(1, 'days');
+        const tomorrow = moment(today).add(1, 'days'); // eslint-disable-line
 
-        const fileURL = `https://z2.objectstorage.liveperson.net${relativePath}?temp_url_sig=${tmpUrlSig}&temp_url_expires=${tomorrow.valueOf()}`;
+        const fileURL = `https://z2.objectstorage.liveperson.net${relativePath}?temp_url_sig=${tmpUrlSig}&temp_url_expires=${tmpUrlExp}`;
 
         resolve(fileURL);
       } else {

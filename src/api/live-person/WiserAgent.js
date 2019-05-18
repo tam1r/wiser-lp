@@ -182,18 +182,18 @@ class WiserAgent extends Agent {
       }, delay * 1000);
     };
 
-    this.on('error', (error) => {
-      log.error('Error: ', error);
-      if (error && error.code === 401) {
-        this._reconnect();
-      }
-    });
-
-    this.on('closed', (data) => {
-      log.error('Socket closed: ', data);
-      clearInterval(this.pingClock);
-      this._reconnect();
-    });
+    // this.on('error', (error) => {
+    //   log.error('Error: ', error);
+    //   if (error && error.code === 401) {
+    //     this._reconnect();
+    //   }
+    // });
+    //
+    // this.on('closed', (data) => {
+    //   log.error('Socket closed: ', data);
+    //   clearInterval(this.pingClock);
+    //   this._reconnect();
+    // });
   }
 }
 

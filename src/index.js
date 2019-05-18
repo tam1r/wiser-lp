@@ -93,7 +93,7 @@ let connection;
   });
 
   app.listen(process.env.PORT || PORT, async () => {
-    log.success('Server listening on port ' + (process.env.PORT || PORT) + '!');
+    log.success(`Server listening on port ${process.env.PORT || PORT}!`);
     agents = await initService(connection);
   });
 })();

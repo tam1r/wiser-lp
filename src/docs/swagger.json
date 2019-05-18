@@ -4,11 +4,9 @@
     "title": "WiserLP API Docs",
     "version": "v1"
   },
-  "tags": [
-    {
-      "name": "Endpoints"
-    }
-  ],
+  "tags": [{
+    "name": "Endpoints"
+  }],
   "paths": {
     "/register-client": {
       "post": {
@@ -16,14 +14,14 @@
           "Endpoints"
         ],
         "operationId": "register-client",
-        "summary": "Register a new client, you can do so using both username/password or appkey/secret/accessToken/accessTokenSecret",
+        "summary": "Register a new client, you can do so using both username/password or appkey/secret/accessToken/accessTokenSecret, consult the models below",
         "parameters": [
           {
             "name": "User",
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/User"
+              "$ref": "#/definitions/User - Authentication with Password"
             }
           }
         ],
@@ -66,10 +64,14 @@
     }
   },
   "definitions": {
-    "User": {
+    "User - Authentication with Secret": {
       "required": [
         "username",
-        "liveperson_accountid"
+        "liveperson_accountid",
+        "liveperson_appkey",
+        "liveperson_secret",
+        "liveperson_accesstoken",
+        "liveperson_accesstokensecret"
       ],
       "properties": {
         "username": {
@@ -92,6 +94,12 @@
         },
 		    "liveperson_accesstokensecret": {
           "type": "string"
+        },
+        "new_conversation_webhook": {
+          "type": "string"
+        },
+        "new_file_in_conversation_webhook": {
+          "type": "string"
         }
       },
       "example": {
@@ -105,6 +113,37 @@
         "new_file_in_conversation_webhook": "https://hooks.zapier.com/hooks/catch/1234443/234234/"
       }
     },
+    "User - Authentication with Password": {
+      "required": [
+        "username",
+        "liveperson_accountid",
+        "liveperson_password"
+      ],
+      "properties": {
+        "username": {
+          "type": "string"
+        },
+        "liveperson_password": {
+          "type": "string"
+        },
+        "liveperson_accountid": {
+          "type": "string"
+        },
+        "new_conversation_webhook": {
+          "type": "string"
+        },
+        "new_file_in_conversation_webhook": {
+          "type": "string"
+        }
+      },
+      "example": {
+        "username": "John Doe",
+        "liveperson_accountid": "1234567890",
+        "liveperson_password": "1234567890",
+        "new_conversation_webhook": "https://hooks.zapier.com/hooks/catch/1646904/73834/",
+        "new_file_in_conversation_webhook": "https://hooks.zapier.com/hooks/catch/1234443/234234/"
+      }
+    },
     "Message": {
       "type": "object",
       "required": [
@@ -113,7 +152,7 @@
       ],
       "properties": {
         "credentials": {
-          "$ref": "#/definitions/User"
+          "$ref": "#/definitions/User - Authentication with Password"
         },
         "message": {
           "type": "object",
@@ -139,7 +178,7 @@
       	"credentials": {
       		"username": "john@doe.com",
       		"liveperson_accountid": "978654321",
-      		"password": "123441234123423!!!"
+      		"liveperson_password": "MySafePasswowrd1234"
       	},
       	"message": {
       		"dialogId": "ABCDE-12345-MNBVC-98765",

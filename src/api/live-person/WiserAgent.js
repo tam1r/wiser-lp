@@ -1,4 +1,5 @@
 const { Agent } = require('node-agent-sdk');
+const Sentry = require('@sentry/node');
 const { log, triggerWebhook } = require('../../utils');
 const Utils = require('./utils');
 
@@ -9,6 +10,7 @@ const reconnectRatio = 1.25; // ratio to determine reconnect exponential back-of
 class WiserAgent extends Agent {
   constructor(credentials, webhooks) {
     super(credentials);
+    this.connecting = true;
     this.conf = credentials;
     this.webhooks = webhooks;
     this.consumerId = undefined;
@@ -59,7 +61,9 @@ class WiserAgent extends Agent {
 
   init() {
     this.on('connected', () => {
-      clearTimeout(this._retryConnection); // eslint-disablel
+      this.connecting = false;
+      if (this._retryConnection) clearTimeout(this._retryConnection);
+
       log.message(`Successfully connected agent with accountId: ${this.conf.accountId}`);
 
       // make the agent visibity to "online"
@@ -81,6 +85,21 @@ class WiserAgent extends Agent {
       this.subscribeRoutingTasks({});
 
       this.pingClock = setInterval(this.getClock, 30000); // keep alive connection strategy
+    });
+
+    this.on('routing.RoutingTaskNotification', (body) => {
+      body.changes.forEach((c) => {
+        if (c.type === 'UPSERT') {
+          c.result.ringsDetails.forEach((r) => {
+            if (r.ringState === 'WAITING') {
+              this.updateRingState({
+                ringId: r.ringId,
+                ringState: 'ACCEPTED',
+              }, (e, resp) => console.log(resp));
+            }
+          });
+        }
+      });
     });
 
     // Notification on changes in the open consversation list
@@ -156,27 +175,41 @@ class WiserAgent extends Agent {
     });
 
     this._reconnect = (delay = reconnectInterval, attempt = 1) => {
-      this._retryConnection = setTimeout(() => {
-        log.info(`Attempting to reconnect agent ${this.conf.username} - attempt n ${attempt}`);
+      // implementation reference:
+      // https://github.com/LivePersonInc/node-agent-sdk#closed
 
-        this.reconnect();
+      const { username: agent } = this.conf;
+      const nextDelay = delay * 1000;
 
-        if (++attempt <= reconnectAttempts) { // eslint-disable-line
-          this._reconnect(reconnectInterval * reconnectRatio, attempt);
-        }
-      }, delay * 1000);
+      if (this.connecting) {
+        this._retryConnection = setTimeout(() => {
+          log.info(`Attempting to reconnect agent ${agent} | attempt ${attempt} | next delay ${nextDelay}`);
+
+          if (this.connecting) {
+            this.reconnect();
+
+            if (++attempt <= reconnectAttempts) { // eslint-disable-line
+              this._reconnect(reconnectInterval * reconnectRatio, attempt);
+            }
+          }
+        }, nextDelay);
+      }
     };
 
     this.on('error', (error) => {
-      log.error('Error: ', error);
+      Sentry.captureException(error);
+      log.error('Error ', error);
+
       if (error && error.code === 401) {
+        this.connecting = true;
         this._reconnect();
       }
     });
 
     this.on('closed', (data) => {
-      log.error('Socket closed: ', data);
+      log.warning('Socket closed: ', data);
       clearInterval(this.pingClock);
+      this.connecting = true;
       this._reconnect();
     });
   }
@@ -223,23 +256,6 @@ Reference Code:
 //         type: 'AcceptStatusEvent', status: 'READ', sequenceList: [contentEvent.sequence] },
 //     });
 //     this.emit(this.CONTENT_NOTIFICATION, contentEvent);
-//   });
-// });
-
-
-// Accept any routingTask (==ring)
-// this.on('routing.RoutingTaskNotification', (body) => {
-//   body.changes.forEach((c) => {
-//     if (c.type === 'UPSERT') {
-//       c.result.ringsDetails.forEach((r) => {
-//         if (r.ringState === 'WAITING') {
-//           this.updateRingState({
-//             ringId: r.ringId,
-//             ringState: 'ACCEPTED',
-//           }, (e, resp) => console.log(resp));
-//         }
-//       });
-//     }
 //   });
 // });
 

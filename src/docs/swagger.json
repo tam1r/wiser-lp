@@ -95,11 +95,8 @@
 		    "liveperson_accesstokensecret": {
           "type": "string"
         },
-        "new_conversation_webhook": {
-          "type": "string"
-        },
-        "new_file_in_conversation_webhook": {
-          "type": "string"
+        "webhooks": {
+          "$ref": "#/definitions/Webhooks"
         }
       },
       "example": {
@@ -109,8 +106,10 @@
         "liveperson_secret": "1234567890",
         "liveperson_accesstoken": "1234567890",
         "liveperson_accesstokensecret": "1234567890",
-        "new_conversation_webhook": "https://hooks.zapier.com/hooks/catch/1646904/73834/",
-        "new_file_in_conversation_webhook": "https://hooks.zapier.com/hooks/catch/1234443/234234/"
+        "webhooks": {
+          "new_conversation_webhook": "https://hooks.zapier.com/hooks/catch/1646904/73834/",
+          "new_file_in_conversation_webhook": "https://hooks.zapier.com/hooks/catch/1234443/234234/"
+        }
       }
     },
     "User - Authentication with Password": {
@@ -129,19 +128,14 @@
         "liveperson_accountid": {
           "type": "string"
         },
-        "new_conversation_webhook": {
-          "type": "string"
-        },
-        "new_file_in_conversation_webhook": {
-          "type": "string"
+        "webhooks": {
+          "$ref": "#/definitions/Webhooks"
         }
       },
       "example": {
         "username": "John Doe",
         "liveperson_accountid": "1234567890",
-        "liveperson_password": "1234567890",
-        "new_conversation_webhook": "https://hooks.zapier.com/hooks/catch/1646904/73834/",
-        "new_file_in_conversation_webhook": "https://hooks.zapier.com/hooks/catch/1234443/234234/"
+        "liveperson_password": "1234567890"
       }
     },
     "Message": {
@@ -185,6 +179,27 @@
       		"contentType": "text/plain",
       		"message": "Hello!"
       	}
+      }
+    },
+    "Webhooks": {
+      "type": "object",
+      "properties": {
+        "new_conversation_webhook": {
+          "type": "string"
+        },
+        "new_file_in_conversation_webhook": {
+          "type": "string"
+        },
+        "new_message_arrived_webhook": {
+          "type": "string"
+        }
+      },
+      "example": {
+        "webhooks": {
+          "new_conversation_webhook": "https://hooks.zapier.com/hooks/catch/1646904/73834/",
+          "new_file_in_conversation_webhook": "https://hooks.zapier.com/hooks/catch/1234443/234234/",
+          "new_message_arrived_webhook": "https://hooks.zapier.com/hooks/catch/1234443/293734/"
+        }
       }
     }
   }

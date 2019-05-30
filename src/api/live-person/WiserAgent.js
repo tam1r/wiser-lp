@@ -111,6 +111,20 @@ class WiserAgent extends Agent {
         const messageDetails = await Utils.extractMessageDetails(change);
         const parsedConversationDetails = await Utils.extractConversationDetails(this, change);
 
+        // new_message_arrived trigger
+        if (this.webhooks.new_message_arrived) {
+          await triggerWebhook(this.webhooks.new_message_arrived, {
+            convId,
+            convDetails: parsedConversationDetails,
+          });
+          log.success(
+            `successfully triggered 'new_message_arrived' webhook: ${this.webhooks.new_message_arrived}
+            convId: ${convId}
+            accountId: ${this.conf.accountId}
+            convDetails: ${log.object(parsedConversationDetails)}`,
+          );
+        }
+
         if (messageDetails.type === 'hosted/file') {
           const fileURL = await Utils.generateURLForDownloadFile(this, messageDetails.relativePath);
           if (this.webhooks.new_file_in_conversation_webhook) {
@@ -120,7 +134,7 @@ class WiserAgent extends Agent {
               convDetails: parsedConversationDetails,
             });
             log.success(
-              `successfully triggered webhook: ${this.webhooks.new_file_in_conversation_webhook}
+              `successfully triggered 'new_file_in_conversation' webhook: ${this.webhooks.new_file_in_conversation_webhook}
               convId: ${convId}
               accountId: ${this.conf.accountId}
               convDetails: ${log.object(parsedConversationDetails)}`,

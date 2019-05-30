@@ -13,6 +13,7 @@ function addClient(connection, credentials) {
       liveperson_accesstokensecret,
       new_conversation_webhook,
       new_file_in_conversation_webhook,
+      new_message_arrived_webhook,
       zapier_apikey
     )
     VALUES (
@@ -25,6 +26,7 @@ function addClient(connection, credentials) {
       '${credentials.liveperson_accesstokensecret || ''}',
       '${credentials.new_conversation_webhook || ''}',
       '${credentials.new_file_in_conversation_webhook || ''}',
+      '${credentials.new_message_arrived_webhook || ''}',
       '${credentials.zapier_apikey || ''}'
     )
   `;

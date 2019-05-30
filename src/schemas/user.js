@@ -27,7 +27,4 @@ module.exports = schema({
       },
     },
   },
-  new_file_in_conversation_webhook: { type: String, required: false },
-  new_conversation_webhook: { type: String, required: false },
-  new_message_arrived_webhook: { type: String, required: false },
 });

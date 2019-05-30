@@ -135,7 +135,12 @@
       "example": {
         "username": "John Doe",
         "liveperson_accountid": "1234567890",
-        "liveperson_password": "1234567890"
+        "liveperson_password": "1234567890",
+        "webhooks": {
+          "new_conversation_webhook": "https://hooks.zapier.com/hooks/catch/1646904/73834/",
+          "new_file_in_conversation_webhook": "https://hooks.zapier.com/hooks/catch/1234443/234234/",
+          "new_message_arrived_webhook": "https://hooks.zapier.com/hooks/catch/1234443/293734/"
+        }
       }
     },
     "Message": {
@@ -192,13 +197,6 @@
         },
         "new_message_arrived_webhook": {
           "type": "string"
-        }
-      },
-      "example": {
-        "webhooks": {
-          "new_conversation_webhook": "https://hooks.zapier.com/hooks/catch/1646904/73834/",
-          "new_file_in_conversation_webhook": "https://hooks.zapier.com/hooks/catch/1234443/234234/",
-          "new_message_arrived_webhook": "https://hooks.zapier.com/hooks/catch/1234443/293734/"
         }
       }
     }

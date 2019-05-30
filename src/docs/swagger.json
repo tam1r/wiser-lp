@@ -35,6 +35,50 @@
         }
       }
     },
+    "/unregister-client": {
+      "delete": {
+        "tags": [
+          "Endpoints"
+        ],
+        "operationId": "unregister-client",
+        "summary": "Remove entirely from the system a given user",
+        "parameters": [
+          {
+            "name": "account_id",
+            "in": "body",
+            "example": "{\n  \"account_id\": \"ABCDE-12345-MNBVC-98765\"\n}",
+            "required": true
+          }
+        ]
+      }
+    },
+    "/update-metadata": {
+      "put": {
+        "tags": [
+          "Endpoints"
+        ],
+        "operationId": "update-metadata",
+        "summary": "Update all of the account-related parameters, except for the username",
+        "parameters": [
+          {
+            "name": "User",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/User - Authentication with Password"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Account updated"
+          },
+          "400": {
+            "description": "Bad request"
+          }
+        }
+      }
+    },
     "/send-message": {
       "post": {
         "tags": [

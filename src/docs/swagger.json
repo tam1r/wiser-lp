@@ -5,13 +5,13 @@
     "version": "v1"
   },
   "tags": [{
-    "name": "Endpoints"
+    "name": "Client Endpoints"
   }],
   "paths": {
     "/register-client": {
       "post": {
         "tags": [
-          "Endpoints"
+          "Client Endpoints"
         ],
         "operationId": "register-client",
         "summary": "Register a new client, you can do so using both username/password or appkey/secret/accessToken/accessTokenSecret, consult the models below",
@@ -38,7 +38,7 @@
     "/unregister-client": {
       "delete": {
         "tags": [
-          "Endpoints"
+          "Client Endpoints"
         ],
         "operationId": "unregister-client",
         "summary": "Remove entirely from the system a given user",
@@ -55,7 +55,7 @@
     "/update-metadata": {
       "put": {
         "tags": [
-          "Endpoints"
+          "Client Endpoints"
         ],
         "operationId": "update-metadata",
         "summary": "Update all of the account-related parameters, except for the username",
@@ -63,10 +63,8 @@
           {
             "name": "User",
             "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/User - Authentication with Password"
-            }
+            "example": "{\n  \"account_id\": \"ABCDE-12345-MNBVC-98765\",\n  \"webhooks\": {\n    \"new_conversation_webhook\": \"https://hooks.zapier.com/hooks/catch/1646904/73834/\",\n    \"new_file_in_conversation_webhook\": \"https://hooks.zapier.com/hooks/catch/1234443/234234/\",\n    \"new_message_arrived_webhook\": \"https://hooks.zapier.com/hooks/catch/1234443/293734/\"\n  }\n}",
+            "required": true
           }
         ],
         "responses": {
@@ -82,7 +80,7 @@
     "/send-message": {
       "post": {
         "tags": [
-          "Endpoints"
+          "Actions"
         ],
         "operationId": "send-message",
         "summary": "Send a message to any open conversation",

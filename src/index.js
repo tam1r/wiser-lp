@@ -19,7 +19,7 @@ const googlePlacesHeaders = {
 
 function keepAwake() {
   setInterval(() => {
-    http.get('https://lp-freightbot.herokuapp.com/');
+    http.get('http://lp-freightbot.herokuapp.com/');
   }, 300000);
 }
 

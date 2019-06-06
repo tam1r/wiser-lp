@@ -41,6 +41,8 @@ function keepAwake() {
     let rate = '';
     let shippingCompany = '';
     let shippingTime = '';
+    let sealine = '';
+    let currency = '';
 
     console.log(`Received:\nportOrigin: ${portOrigin}\nportDest: ${portDest}\n`);
 
@@ -84,7 +86,9 @@ function keepAwake() {
 
       const { data: seaRatesResponse } = await axios.get(seaRatesURL);
 
-      rate = seaRatesResponse.rates.road_from.rate; // eslint-disable-line
+      rate = seaRatesResponse.rates.fcl[0]['20st'];
+      sealine = seaRatesResponse.rates.fcl[0].sealine; // eslint-disable-line
+      currency = seaRatesResponse.rates.fcl[0].currency; // eslint-disable-line
       shippingCompany = seaRatesResponse.rates.fcl[0].company_name;
       shippingTime = seaRatesResponse.rates.fcl[0].transit_time;
     } catch (error) {
@@ -94,7 +98,17 @@ function keepAwake() {
       });
     }
 
-    return res.status(200).send({ rate, shippingCompany, shippingTime });
+    const response = {
+      rate,
+      sealine,
+      currency,
+      shippingCompany,
+      shippingTime,
+    };
+
+    console.log(`response:\n${JSON.stringify(response)}`);
+
+    return res.status(200).send(response);
   });
 
   app.get('/', (req, res) => res.status(200).send('LP-freightbot'));

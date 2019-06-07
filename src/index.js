@@ -29,7 +29,11 @@ function keepAwake() {
   app.use(bodyParser.urlencoded({ extended: true }));
 
   app.post('/lp-freightbot', async (req, res) => {
-    const { portOrigin, portDest } = req.body;
+    let { portOrigin, portDest } = req.body;
+
+    if (!portOrigin && !portDest) {
+      ({ portOrigin, portDest } = req.query);
+    }
 
     if (!portOrigin) return res.status(422).send('Missing `portOrigin` parameter');
     if (!portDest) return res.status(422).send('Missing `portDest` parameter');

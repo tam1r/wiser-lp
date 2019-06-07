@@ -28,7 +28,7 @@ function keepAwake() {
   app.use(bodyParser.json());
   app.use(bodyParser.urlencoded({ extended: true }));
 
-  app.post('/lp-freightbot', async (req, res) => {
+  app.get('/lp-freightbot', async (req, res) => {
     let { portOrigin, portDest } = req.body;
 
     if (!portOrigin && !portDest) {

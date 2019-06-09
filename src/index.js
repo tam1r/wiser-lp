@@ -23,6 +23,10 @@ function keepAwake() {
   }, 300000);
 }
 
+function isNull(value) {
+  return value === null;
+}
+
 (async () => {
   app.use(morgan('tiny'));
   app.use(bodyParser.json());
@@ -88,7 +92,7 @@ function keepAwake() {
       const seaRatesURL = `${baseURL}?apiKey=${apikey}&lat_from=${latOrigin}&lng_from=${lngOrigin}&lat_to=${latDest}&lng_to=${lngDest}`;
       console.log(`waiting for ${seaRatesURL}`);
 
-      const { data: seaRatesResponse } = await axios.get(seaRatesURL);
+      const { data: seaRatesResponse } = await axios.get(seaRatesURL).catch(console.error);
 
       rate = seaRatesResponse.rates.fcl[0]['20st'];
       sealine = seaRatesResponse.rates.fcl[0].sealine; // eslint-disable-line
@@ -101,6 +105,12 @@ function keepAwake() {
         error,
       });
     }
+
+    if (isNull(rate)) rate = 'Unknown';
+    if (isNull(sealine)) sealine = 'Unknown';
+    if (isNull(currency)) currency = 'Unknown';
+    if (isNull(shippingCompany)) shippingCompany = 'Unknown';
+    if (isNull(shippingTime)) shippingTime = 'Unknown';
 
     const response = {
       rate,

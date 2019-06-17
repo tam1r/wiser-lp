@@ -1,16 +1,39 @@
-# wiser-lp
+# lp-freightbot
 
-## Development
+Based on `shippingMethod`, `portOrigin` and `portDest`, the _lp-freightbot_ endpoint:
 
-- Install dependencies with `npm install`
-- Setup `.env` file with the following environment variables
+1. converts the human readable addresses in `portOrigin` and `portDest` to latitude/longitude, using the google places api
+2. based on the `shippingTime` gets the shipping quote from the searates API
 
-```
-DEV_DB_HOST=localhost
-DEV_DB_USER=${mysql user}
-DEV_DB_PASSWORD=${password}
-DEV_DATABASE_NAME=${mysql database name}
+___
 
-```
+Base Endpoint: `http://lp-freightbot.herokuapp.com/`
 
-- Run project with `npm run dev`
+NOTE: all parameters are passed on the URL, and the request must be made doing a `GET` http request
+
+___
+
+Available shippingMethods their parameters
+
+✔: Required
+
+✘: Not required
+
+| shippingMethod | portOrigin | portDest | weight | volume |
+| -------------- | ---------- | -------- | ------ | ------ |
+|      fcl       |     ✔      |    ✔    |   ✘   |    ✘   |
+|      lcl       |     ✔      |    ✔    |   ✔   |    ✔   |
+|      rail      |     ✔      |    ✔    |   ✘   |    ✘   |
+|      road      |     ✔      |    ✔    |   ✔   |    ✔   |
+|      air       |     ✔      |    ✔    |   ✔   |    ✘   |
+
+___
+
+Example of an url request:
+
+http://lp-freightbot.herokuapp.com/lp-freightbot?shippingMethod=fcl&portOrigin=singapore&portDest=rio%20de%20janeiro
+
+---
+
+For reference of how every parameter should be formatted, consult:
+https://www.searates.com/reference/platform-api/

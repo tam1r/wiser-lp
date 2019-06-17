@@ -12,6 +12,15 @@ const { log } = require('./utils');
 
 const PORT = 3000;
 
+const seaRatesApiKey = 'testJ3skfNF32nfksS93rg';
+const seaRatesBaseURLs = {
+  fcl: 'http://sirius.searates.com/port/api-fcl',
+  lcl: 'https://sirius.searates.com/port/api-lcl',
+  rail: 'https://sirius.searates.com/port/api-rail',
+  road: 'https://sirius.searates.com/port/api-road',
+  air: 'https://sirius.searates.com/port/api-air',
+};
+
 const googlePlacesHeaders = {
   'X-RapidAPI-Host': 'google-maps-geocoding.p.rapidapi.com',
   'X-RapidAPI-Key': 'e03d1dd3bdmshdd23810ade89da0p1de985jsn64527b3ffd09',
@@ -33,14 +42,35 @@ function isNull(value) {
   app.use(bodyParser.urlencoded({ extended: true }));
 
   app.get('/lp-freightbot', async (req, res) => {
-    let { portOrigin, portDest } = req.body;
+    let {
+      shippingMethod,
+      portOrigin,
+      portDest,
+      weight,
+      volume,
+    } = req.body;
 
-    if (!portOrigin && !portDest) {
-      ({ portOrigin, portDest } = req.query);
+    if (!shippingMethod && !portOrigin && !portDest) {
+      ({
+        shippingMethod,
+        portOrigin,
+        portDest,
+        weight,
+        volume,
+      } = req.query);
     }
 
+    if (!shippingMethod) return res.status(422).send('Missing `shippingMethod` parameter');
     if (!portOrigin) return res.status(422).send('Missing `portOrigin` parameter');
     if (!portDest) return res.status(422).send('Missing `portDest` parameter');
+
+    if (shippingMethod === 'lcl' || shippingMethod === 'road' || shippingMethod === 'air') {
+      if (!weight) return res.status(422).send('Missing `weight` parameter');
+
+      if (shippingMethod === 'lcl' || shippingMethod === 'road') {
+        if (!volume) return res.status(422).send('Missing `volume` parameter');
+      }
+    }
 
     let latOrigin = '';
     let lngOrigin = '';
@@ -52,7 +82,13 @@ function isNull(value) {
     let sealine = '';
     let currency = '';
 
-    console.log(`Received:\nportOrigin: ${portOrigin}\nportDest: ${portDest}\n`);
+    console.log(`
+      Received:
+      portOrigin: ${portOrigin}
+      portDest: ${portDest}
+      weight: ${weight || null}
+      volume: ${volume || null}
+    `);
 
     // google places api call
     try {
@@ -87,9 +123,16 @@ function isNull(value) {
 
     // searates api call
     try {
-      const baseURL = 'http://sirius.searates.com/port/api-fcl';
-      const apikey = 'testJ3skfNF32nfksS93rg';
-      const seaRatesURL = `${baseURL}?apiKey=${apikey}&lat_from=${latOrigin}&lng_from=${lngOrigin}&lat_to=${latDest}&lng_to=${lngDest}`;
+      let seaRatesURL = `${seaRatesBaseURLs[shippingMethod]}?apiKey=${seaRatesApiKey}&lat_from=${latOrigin}&lng_from=${lngOrigin}&lat_to=${latDest}&lng_to=${lngDest}`;
+
+      if (shippingMethod === 'lcl' || shippingMethod === 'road' || shippingMethod === 'air') {
+        seaRatesURL += `weight=${weight}`;
+
+        if (shippingMethod === 'lcl' || shippingMethod === 'road') {
+          seaRatesURL += `volume=${volume}`;
+        }
+      }
+
       console.log(`waiting for ${seaRatesURL}`);
 
       const { data: seaRatesResponse } = await axios.get(seaRatesURL).catch(console.error);

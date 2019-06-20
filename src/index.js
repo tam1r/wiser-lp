@@ -32,10 +32,6 @@ function keepAwake() {
   }, 300000);
 }
 
-function isNull(value) {
-  return value === null;
-}
-
 (async () => {
   app.use(morgan('tiny'));
   app.use(bodyParser.json());
@@ -72,18 +68,15 @@ function isNull(value) {
       }
     }
 
+    const response = {};
     let latOrigin = '';
     let lngOrigin = '';
     let latDest = '';
     let lngDest = '';
-    let rate = '';
-    let shippingCompany = '';
-    let shippingTime = '';
-    let sealine = '';
-    let currency = '';
 
     console.log(`
       Received:
+      shippingMethod: ${shippingMethod}
       portOrigin: ${portOrigin}
       portDest: ${portDest}
       weight: ${weight || null}
@@ -137,31 +130,49 @@ function isNull(value) {
 
       const { data: seaRatesResponse } = await axios.get(seaRatesURL).catch(console.error);
 
-      rate = seaRatesResponse.rates.fcl[0]['20st'];
-      sealine = seaRatesResponse.rates.fcl[0].sealine; // eslint-disable-line
-      currency = seaRatesResponse.rates.fcl[0].currency; // eslint-disable-line
-      shippingCompany = seaRatesResponse.rates.fcl[0].company_name;
-      shippingTime = seaRatesResponse.rates.fcl[0].transit_time;
+      console.log(`RESPONSE: ${JSON.stringify(seaRatesResponse)}`);
+
+      if (shippingMethod === 'fcl') {
+        response.rate = seaRatesResponse.rates.fcl[0]['20st'] || 'Unknown';
+        response.sealine = seaRatesResponse.rates.fcl[0].sealine || 'Unknown'; // eslint-disable-line
+        response.currency = seaRatesResponse.rates.fcl[0].currency || 'Unknown'; // eslint-disable-line
+        response.shippingCompany = seaRatesResponse.rates.fcl[0].company_name || 'Unknown';
+        response.shippingTime = seaRatesResponse.rates.fcl[0].transit_time || 'Unknown';
+      }
+
+      if (shippingMethod === 'rail') {
+        response.rate = seaRatesResponse.rates[0].rate || 'Unknown'; // eslint-disable-line
+        response.currency = seaRatesResponse.rates[0].currency || 'Unknown'; // eslint-disable-line
+        response.shippingCompany = seaRatesResponse.rates[0].company || 'Unknown';
+        response.transit_time = seaRatesResponse.rates[0].transit_time || 'Unknown';
+        response.distance = seaRatesResponse.rates[0].distance || 'Unknown';
+      }
+
+      if (shippingMethod === 'lcl') {
+        response.rate = seaRatesResponse.rates.lcl[0].rate || 'Unknown';
+        response.shippingCompany = seaRatesResponse.rates.lcl[0].company_name || 'Unknown';
+        response.transit_time = seaRatesResponse.rates.lcl[0].transit_time || 'Unknown';
+      }
+
+      if (shippingMethod === 'road') {
+        response.rate = seaRatesResponse.rates[0].rate || 'Unknown';
+        response.currency = seaRatesResponse.rates[0].currency || 'Unknown';
+        response.shippingCompany = seaRatesResponse.rates[0].company_name || 'Unknown';
+        response.transit_time = seaRatesResponse.rates[0].transit_time || 'Unknown';
+        response.distance = seaRatesResponse.rates[0].distance || 'Unknown';
+      }
+
+      if (shippingMethod === 'air') {
+        response.rate = seaRatesResponse.rates.air[0].rate || 'Unknown';
+        response.shippingCompany = seaRatesResponse.rates.air[0].company_name || 'Unknown';
+        response.transit_time = seaRatesResponse.rates.air[0].transit_time || 'Unknown';
+      }
     } catch (error) {
       return res.status(500).send({
         msg: 'Error occurred processing Searates API',
         error,
       });
     }
-
-    if (isNull(rate)) rate = 'Unknown';
-    if (isNull(sealine)) sealine = 'Unknown';
-    if (isNull(currency)) currency = 'Unknown';
-    if (isNull(shippingCompany)) shippingCompany = 'Unknown';
-    if (isNull(shippingTime)) shippingTime = 'Unknown';
-
-    const response = {
-      rate,
-      sealine,
-      currency,
-      shippingCompany,
-      shippingTime,
-    };
 
     console.log(`response:\n${JSON.stringify(response)}`);
 

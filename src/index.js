@@ -2,6 +2,7 @@ require('dotenv').config();
 
 const bodyParser = require('body-parser');
 const swagger = require('swagger-ui-express');
+const http = require('http');
 const Sentry = require('@sentry/node');
 const express = require('express');
 const morgan = require('morgan');
@@ -24,6 +25,12 @@ if (process.env.NODE_ENV === 'production') {
 
 const PORT = 3000;
 let connection;
+
+function keepAwake() {
+  setInterval(() => {
+    http.get('http://lpstaging.herokuapp.com//');
+  }, 300000);
+}
 
 (async () => {
   connection = await db.connect();
@@ -123,5 +130,6 @@ let connection;
 
   app.listen(process.env.PORT || PORT, async () => {
     log.success(`Server listening on port ${process.env.PORT || PORT}!`);
+    keepAwake();
   });
 })();

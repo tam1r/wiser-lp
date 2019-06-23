@@ -38,11 +38,24 @@ let connection;
   app.use(bodyParser.urlencoded({ extended: true }));
   app.use('/docs', swagger.serve, swagger.setup(docs, docsConfig));
 
+  app.post('/unregister-client', async (req, res) => { // eslint-disable-line
+    const validatedMetadata = await schema.validate(req.body, schemas.user.endpoints.unregisterClient) // eslint-disable-line
+      .catch((error) => {
+        log.error(`Error validating request's body:\n${log.object(error)}`);
+        return res.status(400).send(error);
+      });
+
+    // TODO: remove the agent from the AgentsClusterService
+    // TODO: remove account from the DB
+
+    return res.send('Endpoint in development');
+  });
+
   app.post('/register-client', async (req, res) => {
-    const validatedCredentials = await schema.validate(req.body, schemas.user)
+    const validatedCredentials = await schema.validate(req.body, schemas.user.model)
       .catch((error) => {
         log.error(`Error validating credentials:\n${log.object(error)}`);
-        res.status(400).send(error);
+        return res.status(400).send(error);
       });
 
     // TODO: check if user with these credentials exist
@@ -52,6 +65,8 @@ let connection;
 
     // Init liveperson service for recently created user
     const accountId = validatedCredentials.liveperson_accountid;
+    const { webhooks } = validatedCredentials;
+
     const credentials = {
       accountId,
       username: validatedCredentials.username,
@@ -61,42 +76,50 @@ let connection;
       accessToken: validatedCredentials.liveperson_accesstoken,
       accessTokenSecret: validatedCredentials.liveperson_accesstokensecret,
     };
-    const webhooks = {
-      new_conversation_webhook: validatedCredentials.new_conversation_webhook,
-      new_file_in_conversation_webhook: validatedCredentials.new_file_in_conversation_webhook,
-    };
 
     AgentsClusterService.agents[accountId] = new WiserAgent(credentials, webhooks);
 
     log.info(`Successfully registered user with credentials:\n ${log.object(credentials)}`);
-    res.status(200).send('Register success');
+    return res.status(200).send('Register success');
+  });
+
+  app.put('/update-metadata', async (req, res) => {
+    const validatedMetadata = await schema.validate(req.body, schemas.user.endpoints.updateMetadata) // eslint-disable-line
+      .catch((error) => {
+        log.error(`Error validating request's body:\n${log.object(error)}`);
+        return res.status(400).send(error);
+      });
+
+    // TODO: remove the agent from the AgentsClusterService
+    // TODO: update values in the DB
+    // TODO: re-initalize the agent's account with recently update account
+
+    return res.send('Endpoint in development');
   });
 
   app.post('/send-message', async (req, res) => {
     const { credentials, message } = req.body;
 
-    const validatedCredentials = await schema.validate(credentials, schemas.user)
+    const validatedCredentials = await schema.validate(credentials, schemas.user.model)
       .catch((error) => {
         log.error(`Error validating credentials:\n${log.object(error)}`);
-        res.status(400).send(error);
+        return res.status(400).send(error);
       });
 
     const { liveperson_accountid: accountId } = validatedCredentials;
 
-    const validatedMessage = await schema.validate(message, schemas.message)
+    const validatedMessage = await schema.validate(message, schemas.user.actions.sendMessage)
       .catch((error) => {
         log.error(`Error validating message:\n${log.object(error)}`);
-        res.status(400).send(error);
+        return res.status(400).send(error);
       });
 
     const response = await AgentsClusterService.agents[accountId].sendMessage(validatedMessage);
 
-    res.status(response.code).send(response.message);
+    return res.status(response.code).send(response.message);
   });
 
-  app.get('/', (req, res) => {
-    res.status(200).send('WiserLP');
-  });
+  app.get('/', (req, res) => res.status(200).send('WiserLP'));
 
   app.listen(process.env.PORT || PORT, async () => {
     log.success(`Server listening on port ${process.env.PORT || PORT}!`);

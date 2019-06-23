@@ -1,13 +1,13 @@
 const moment = require('moment');
+const { log } = require('../../../utils');
 
 function generateURLForDownloadFile(agent, relativePath) {
   return new Promise((resolve, reject) => {
     agent.generateURLForDownloadFile({ relativePath }, (error, response) => {
       if (error) {
+        agent.signale.fatal(new Error(log.obj(error)));
         reject(error);
       }
-
-      console.log('generate URL for download response: ', response);
 
       if (typeof response === 'object') {
         const { temp_url_sig: tmpUrlSig, temp_url_expires: tmpUrlExp } = response.queryParams;

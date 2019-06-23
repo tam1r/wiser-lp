@@ -1,4 +1,5 @@
 const mysql = require('mysql');
+const signale = require('signale');
 
 const { log } = require('../../utils');
 
@@ -21,11 +22,13 @@ function connect() {
 
     await connection.connect((err) => {
       if (err) {
-        log.error('Connection error:');
-        log.message(log.object(err));
-        reject(new Error('Error connecting to database'));
+        const error = new Error('Error connecting to database');
+        signale.error(error);
+        reject(error);
       } else {
-        log.message(`Established connection with host: ${credentials[`${process.env.NODE_ENV}`].host}`);
+        signale.success(
+          log.success(`Established connection with host: ${credentials[`${process.env.NODE_ENV}`].host}`),
+        );
       }
     });
 

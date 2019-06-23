@@ -1,3 +1,4 @@
+const signale = require('signale');
 const { log } = require('../utils');
 const { promisifyQuery } = require('../db');
 const WiserAgent = require('../api/live-person/WiserAgent');
@@ -18,6 +19,7 @@ class AgentsCluster {
     if (response.length) {
       response.forEach(async (user) => {
         let credentials;
+
         if (user.liveperson_password && user.liveperson_password !== '') { // login using username/password
           credentials = {
             username: user.username,
@@ -39,12 +41,17 @@ class AgentsCluster {
           new_conversation_webhook: user.new_conversation_webhook,
           new_file_in_conversation_webhook: user.new_file_in_conversation_webhook,
         };
+
         this.agents[user.liveperson_accountid] = new WiserAgent(credentials, webhooks);
 
-        log.info(`Started liveperson service for user: ${user.username} | ${user.liveperson_accountid}`);
+        signale.success(
+          log.success(`Started liveperson service for user: ${user.username} | ${user.liveperson_accountid}`),
+        );
       });
     } else {
-      log.message('No agents existing in the database');
+      signale.debug(
+        log.warning('No agents existing in the database'),
+      );
     }
   }
 }

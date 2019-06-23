@@ -4,6 +4,7 @@ const bodyParser = require('body-parser');
 const swagger = require('swagger-ui-express');
 const Sentry = require('@sentry/node');
 const express = require('express');
+const signale = require('signale');
 const morgan = require('morgan');
 const schema = require('schm');
 const docs = require('./docs/swagger.json');
@@ -17,6 +18,10 @@ const WiserAgent = require('./api/live-person/WiserAgent');
 const AgentsCluster = require('./service/AgentsCluster.js');
 const schemas = require('./schemas');
 const { log } = require('./utils');
+
+signale.config({
+  displayFilename: true,
+});
 
 if (process.env.NODE_ENV === 'production') {
   Sentry.init({ dsn: process.env.SENTRY_DSN });
@@ -41,7 +46,7 @@ let connection;
   app.post('/unregister-client', async (req, res) => { // eslint-disable-line
     const validatedMetadata = await schema.validate(req.body, schemas.user.endpoints.unregisterClient) // eslint-disable-line
       .catch((error) => {
-        log.error(`Error validating request's body:\n${log.object(error)}`);
+        signale.fatal(error);
         return res.status(400).send(error);
       });
 
@@ -54,7 +59,7 @@ let connection;
   app.post('/register-client', async (req, res) => {
     const validatedCredentials = await schema.validate(req.body, schemas.user.model)
       .catch((error) => {
-        log.error(`Error validating credentials:\n${log.object(error)}`);
+        signale.fatal(error);
         return res.status(400).send(error);
       });
 
@@ -79,14 +84,18 @@ let connection;
 
     AgentsClusterService.agents[accountId] = new WiserAgent(credentials, webhooks);
 
-    log.info(`Successfully registered user with credentials:\n ${log.object(credentials)}`);
+    signale.success(
+      log.success('Successfully registered user with credentials:\n'),
+      JSON.stringify(credentials),
+    );
+
     return res.status(200).send('Register success');
   });
 
   app.put('/update-metadata', async (req, res) => {
     const validatedMetadata = await schema.validate(req.body, schemas.user.endpoints.updateMetadata) // eslint-disable-line
       .catch((error) => {
-        log.error(`Error validating request's body:\n${log.object(error)}`);
+        signale.fatal(error);
         return res.status(400).send(error);
       });
 
@@ -102,7 +111,7 @@ let connection;
 
     const validatedCredentials = await schema.validate(credentials, schemas.user.model)
       .catch((error) => {
-        log.error(`Error validating credentials:\n${log.object(error)}`);
+        signale.fatal(error);
         return res.status(400).send(error);
       });
 
@@ -110,7 +119,7 @@ let connection;
 
     const validatedMessage = await schema.validate(message, schemas.user.actions.sendMessage)
       .catch((error) => {
-        log.error(`Error validating message:\n${log.object(error)}`);
+        signale.fatal(error);
         return res.status(400).send(error);
       });
 
@@ -122,6 +131,8 @@ let connection;
   app.get('/', (req, res) => res.status(200).send('WiserLP'));
 
   app.listen(process.env.PORT || PORT, async () => {
-    log.success(`Server listening on port ${process.env.PORT || PORT}!`);
+    signale.success(
+      log.success(`Server listening on port ${process.env.PORT || PORT}!`),
+    );
   });
 })();

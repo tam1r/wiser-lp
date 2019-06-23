@@ -1,3 +1,4 @@
+const signale = require('signale');
 const { Agent } = require('node-agent-sdk');
 const Sentry = require('@sentry/node');
 const { log, triggerWebhook } = require('../../utils');
@@ -15,13 +16,18 @@ class WiserAgent extends Agent {
     this.webhooks = webhooks;
     this.consumerId = undefined;
     this.openConversations = {};
+    this.signale = signale;
     this.init();
   }
 
   async sendMessage(params) {
     return new Promise(async (resolve) => {
       const { dialogId, contentType, message } = params;
-      log.message(`Send message init, params:\n${log.object(params)}`);
+      this.signale.debug(
+        'Send message init',
+        'params: \n',
+        params,
+      );
 
       switch (contentType) {
         case 'text/plain':
@@ -34,14 +40,21 @@ class WiserAgent extends Agent {
             },
           }, (error, response) => {
             if (error) {
-              log.error(`Error sending message: ${log.object(error)}`);
+              this.signale.fatal(
+                'Error sending message:\n',
+                JSON.stringify(error),
+              );
               resolve({
                 code: error.code,
                 message: error.body,
               });
             }
 
-            log.message(`Send message response: ${log.object(response)}`);
+            this.signale.success(
+              'Send message response:\n',
+              JSON.stringify(response),
+            );
+
             resolve({
               code: 200,
               message: 'Message sent',
@@ -64,21 +77,25 @@ class WiserAgent extends Agent {
       this.connecting = false;
       if (this._retryConnection) clearTimeout(this._retryConnection);
 
-      log.message(`Successfully connected agent with accountId: ${this.conf.accountId}`);
+      this.signale.success(
+        log.success(`Successfully connected agent with accountId: ${this.conf.accountId}`),
+      );
+
+      this.signale = this.signale.scope(this.conf.accountId);
 
       // make the agent visibity to "online"
       this.setAgentState({ availability: 'ONLINE' });
 
       this.subscribeExConversations({ convState: ['OPEN'] }, (error, response) => {
         if (error) {
-          log.error(error);
+          this.signale.error(error);
           return;
         }
 
-        log.success(
-          `Successfully subscribed to new conversations
-          subscriptionId: ${log.object(response.subscriptionId)}
-          accountId: ${this.conf.accountId}`,
+        this.signale.success(
+          log.success('Successfully subscribed to new conversations\n'),
+          log.info(`\t\t\t\tsubscriptionId: ${JSON.stringify(response.subscriptionId)}\n`),
+          log.info(`\t\t\t\taccountId: ${this.conf.accountId}`),
         );
       });
 
@@ -108,7 +125,7 @@ class WiserAgent extends Agent {
         const { convId, conversationDetails } = change.result;
         const { startTs } = conversationDetails;
 
-        const messageDetails = await Utils.extractMessageDetails(change);
+        const messageDetails = await Utils.extractMessageDetails(change, this.signale);
         const parsedConversationDetails = await Utils.extractConversationDetails(this, change);
 
         // new_message_arrived trigger
@@ -117,30 +134,38 @@ class WiserAgent extends Agent {
             convId,
             convDetails: parsedConversationDetails,
           });
-          log.success(
-            `successfully triggered 'new_message_arrived' webhook: ${this.webhooks.new_message_arrived}
-            convId: ${convId}
-            accountId: ${this.conf.accountId}
-            convDetails: ${log.object(parsedConversationDetails)}`,
+
+          this.signale.success(
+            log.success(`successfully triggered 'new_message_arrived' webhook: ${this.webhooks.new_message_arrived}\n`),
+            log.info(`\t\t\tconvId: ${convId}\n`),
+            log.info(`\t\t\taccountId: ${this.conf.accountId}\n`),
+            log.info(`\t\t\tconvDetails: ${log.obj(parsedConversationDetails)}\n`),
           );
         }
 
         if (messageDetails.type === 'hosted/file') {
           const fileURL = await Utils.generateURLForDownloadFile(this, messageDetails.relativePath);
+
           if (this.webhooks.new_file_in_conversation_webhook) {
             await triggerWebhook(this.webhooks.new_file_in_conversation_webhook, {
               fileURL,
               convId,
               convDetails: parsedConversationDetails,
             });
-            log.success(
-              `successfully triggered 'new_file_in_conversation' webhook: ${this.webhooks.new_file_in_conversation_webhook}
-              convId: ${convId}
-              accountId: ${this.conf.accountId}
-              convDetails: ${log.object(parsedConversationDetails)}`,
+
+            this.signale.success(
+              log.success(`successfully triggered 'new_file_in_conversation' webhook: ${this.webhooks.new_file_in_conversation_webhook}\n`),
+              log.info(`\t\t\tconvId: ${convId}\n`),
+              log.info(`\t\t\taccountId: ${this.conf.accountId}\n`),
+              log.info(`\t\t\tconvDetails: ${log.obj(parsedConversationDetails)}`),
             );
           }
-          log.success(`Successfully generated download file URL!\nConvId:   ${convId}\nURL:      ${fileURL}`);
+
+          this.signale.success(
+            log.success('Successfully generated download file URL!\n'),
+            log.info(`\t\t\tConvId: ${convId}\n`),
+            log.info(`\t\t\tURL: ${fileURL}`),
+          );
         }
 
         if (
@@ -183,7 +208,9 @@ class WiserAgent extends Agent {
           delete this.openConversations[convId];
         } else {
           // something else happened
-          log.message(`Unhandled event occured in conversation: ${convId}`);
+          this.signale.debug(
+            log.gray(`Unhandled event occured in conversation: ${convId}`),
+          );
         }
       });
     });
@@ -197,7 +224,9 @@ class WiserAgent extends Agent {
 
       if (this.connecting) {
         this._retryConnection = setTimeout(() => {
-          log.info(`Attempting to reconnect agent ${agent} | attempt ${attempt} | next delay ${nextDelay}`);
+          this.signale.debug(
+            log.warning(`Attempting to reconnect agent ${agent} | attempt ${attempt} | next delay ${nextDelay}`),
+          );
 
           if (this.connecting) {
             this.reconnect();
@@ -212,7 +241,8 @@ class WiserAgent extends Agent {
 
     this.on('error', (error) => {
       Sentry.captureException(error);
-      log.error('Error ', error);
+
+      this.signale.fatal(new Error(log.obj(error)));
 
       if (error && error.code === 401) {
         this.connecting = true;
@@ -220,8 +250,9 @@ class WiserAgent extends Agent {
       }
     });
 
-    this.on('closed', (data) => {
-      log.warning('Socket closed: ', data);
+    this.on('closed', () => {
+      this.signale.fatal(new Error('Socket closed'));
+
       clearInterval(this.pingClock);
       this.connecting = true;
       this._reconnect();

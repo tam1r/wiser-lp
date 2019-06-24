@@ -240,8 +240,8 @@ class WiserAgent extends Agent {
           // an unauthenticated to an authenticated user.
           this.consumerId = change.result.conversationDetails.participants.filter(p => p.role === 'CONSUMER')[0].id;
 
-          this.getUserProfile(this.consumerId, (e, profileResp) => {
-            console.log('consumer id changed: ', profileResp);
+          this.getUserProfile(this.consumerId, (e, profileResp) => { // eslint-disable-line
+            this.signale.info('consumer id changed');
           });
         } else if (change.type === 'DELETE') {
           // conversation was closed or transferred

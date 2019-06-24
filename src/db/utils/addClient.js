@@ -15,6 +15,7 @@ function addClient(connection, credentials) {
     new_conversation_webhook,
     new_file_in_conversation_webhook,
     new_message_arrived_webhook,
+    coordinates_webhook,
   } = webhooks;
 
   const query = `
@@ -29,7 +30,8 @@ function addClient(connection, credentials) {
       liveperson_accesstokensecret,
       new_conversation_webhook,
       new_file_in_conversation_webhook,
-      new_message_arrived_webhook
+      new_message_arrived_webhook,
+      coordinates_webhook
     )
     VALUES (
       '${username}',
@@ -41,7 +43,8 @@ function addClient(connection, credentials) {
       '${liveperson_accesstokensecret || ''}',
       '${new_conversation_webhook || ''}',
       '${new_file_in_conversation_webhook || ''}',
-      '${new_message_arrived_webhook || ''}'
+      '${new_message_arrived_webhook || ''}',
+      '${coordinates_webhook || ''}'
     )
   `;
 

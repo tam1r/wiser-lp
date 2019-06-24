@@ -44,9 +44,9 @@
         "summary": "Remove entirely from the system a given user",
         "parameters": [
           {
-            "name": "account_id",
+            "name": "accountId",
             "in": "body",
-            "example": "{\n  \"account_id\": \"ABCDE-12345-MNBVC-98765\"\n}",
+            "example": "{\n  \"accountId\": \"ABCDE-12345-MNBVC-98765\"\n}",
             "required": true
           }
         ]
@@ -63,7 +63,7 @@
           {
             "name": "User",
             "in": "body",
-            "example": "{\n  \"account_id\": \"ABCDE-12345-MNBVC-98765\",\n  \"webhooks\": {\n    \"new_conversation_webhook\": \"https://hooks.zapier.com/hooks/catch/1646904/73834/\",\n    \"new_file_in_conversation_webhook\": \"https://hooks.zapier.com/hooks/catch/1234443/234234/\",\n    \"new_message_arrived_webhook\": \"https://hooks.zapier.com/hooks/catch/1234443/293734/\"\n  }\n}",
+            "example": "{\n  \"accountId\": \"ABCDE-12345-MNBVC-98765\",\n  \"webhooks\": {\n    \"new_conversation_webhook\": \"https://hooks.zapier.com/hooks/catch/1646904/73834/\",\n    \"new_file_in_conversation_webhook\": \"https://hooks.zapier.com/hooks/catch/1234443/234234/\",\n    \"new_message_arrived_webhook\": \"https://hooks.zapier.com/hooks/catch/1234443/293734/\"\n  }\n}",
             "required": true
           }
         ],
@@ -102,6 +102,29 @@
             "description": "Bad request"
           }
         }
+      }
+    },
+    "/conversation-details": {
+      "get": {
+        "tags": [
+          "Client Endpoints"
+        ],
+        "operationId": "conversation-details",
+        "summary": "Retrieve conversation details, passing a specific agentId and conversationId",
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "body",
+            "example": "{\n  \"accountId\": \"ABCDE-12345-MNBVC-98765\"\n}",
+            "required": true
+          },
+          {
+            "name": "convId",
+            "in": "body",
+            "example": "{\n  \"convId\": \"123456789\"\n}",
+            "required": true
+          }
+        ]
       }
     }
   },

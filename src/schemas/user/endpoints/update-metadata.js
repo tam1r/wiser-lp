@@ -1,7 +1,7 @@
 const schema = require('schm');
 
 module.exports = schema({
-  account_id: { type: String, required: true },
+  accountId: { type: String, required: true },
   liveperson_password: { type: String, required: false },
   liveperson_accountid: { type: String, required: true },
   liveperson_appkey: { type: String, required: false },

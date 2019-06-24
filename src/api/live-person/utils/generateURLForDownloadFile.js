@@ -7,15 +7,13 @@ function generateURLForDownloadFile(agent, relativePath) {
         reject(error);
       }
 
-      console.log('generate URL for download response: ', response);
-
       if (typeof response === 'object') {
         const { temp_url_sig: tmpUrlSig, temp_url_expires: tmpUrlExp } = response.queryParams;
 
         const today = moment();
         const tomorrow = moment(today).add(1, 'days'); // eslint-disable-line
 
-        const fileURL = `https://z2.objectstorage.liveperson.net${relativePath}?temp_url_sig=${tmpUrlSig}&temp_url_expires=${tmpUrlExp}`;
+        const fileURL = `http://z2.objectstorage.liveperson.net${relativePath}?temp_url_sig=${tmpUrlSig}&temp_url_expires=${tmpUrlExp}`;
 
         resolve(fileURL);
       } else {

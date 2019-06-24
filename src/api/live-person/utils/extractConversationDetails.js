@@ -1,4 +1,3 @@
-const log = require('../../../utils/log');
 const retrieveUserMetadata = require('./retrieveUserMetadata');
 
 function extractConversationDetails(agent, change) {
@@ -16,7 +15,7 @@ function extractConversationDetails(agent, change) {
 
     agent.getUserProfile(consumerId, (error, response) => {
       if (error) {
-        log.error(error);
+        agent.signale.error(error);
         reject(error);
       }
 

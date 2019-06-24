@@ -1,47 +1,26 @@
 const chalk = require('chalk');
 
-const currentTime = () => chalk.gray(`> ${(new Date()).toGMTString()} | `);
-const object = (obj) => {
-  if (typeof obj === 'object') {
-    return JSON.stringify(obj, null, 2);
+const obj = (object) => {
+  if (typeof object === 'object') {
+    return chalk.gray(JSON.stringify(object, null, 2));
   }
 
-  return obj;
+  return object;
 };
 
-const message = (msg) => {
-  console.log(currentTime() + chalk.white(msg));
-};
-
-const success = (msg) => {
-  console.log(currentTime() + chalk.bold.green(msg));
-};
-
-const info = (msg) => {
-  console.log(currentTime() + chalk.bold.blue(msg));
-};
-
-const warning = (msg, obj = null) => {
-  let _msg = `${currentTime()} ${chalk.bold.yellow(msg)}`;
-  if (obj) {
-    _msg += `${chalk.bold.yellow(object(obj))}`;
-  }
-  console.log(_msg);
-};
-
-const error = (msg, obj = null) => {
-  let _msg = `${currentTime()} ${chalk.bold.red(msg)}`;
-  if (obj) {
-    _msg += `${chalk.bold.red(object(obj))}`;
-  }
-  console.log(_msg);
-};
+const success = msg => chalk.bold.green(msg);
+const info = msg => chalk.bold.blue(msg);
+const debug = msg => chalk.cyan(msg);
+const warning = msg => chalk.bold.yellow(msg);
+const error = msg => chalk.bold.red(msg);
+const gray = msg => chalk.gray(msg);
 
 module.exports = {
   info,
   success,
   warning,
+  debug,
   error,
-  message,
-  object,
+  gray,
+  obj,
 };

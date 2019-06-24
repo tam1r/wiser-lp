@@ -129,11 +129,16 @@ class WiserAgent extends Agent {
         const parsedConversationDetails = await Utils.extractConversationDetails(this, change)
           .catch(signale.fatal);
 
-
         signale.info(
           log.debug('MESSAGE DETAILS'),
           log.obj(messageDetails),
         );
+
+        if (!this.openConversations.conversationDetails) {
+          this.openConversations[convId] = {
+            conversationDetails: parsedConversationDetails,
+          };
+        }
 
         /*
           [WEBHOOK_TRIGGER]
@@ -204,7 +209,6 @@ class WiserAgent extends Agent {
           && Utils.isConversationRecentlyCreated(startTs)
         ) {
           // New conversation
-          this.openConversations[convId] = {};
 
           /*
             [WEBHOOK_TRIGGER]
@@ -212,6 +216,7 @@ class WiserAgent extends Agent {
           */
           if (this.webhooks.new_conversation_webhook) {
             await triggerWebhook(this.webhooks.new_conversation_webhook, parsedConversationDetails);
+
             log.success(
               `successfully triggered webhook: ${this.webhooks.new_conversation_webhook}
               accountId: ${this.conf.accountId}

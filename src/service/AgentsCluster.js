@@ -10,6 +10,22 @@ class AgentsCluster {
     this.init();
   }
 
+  async getConversationDetails(agentId, convId) {
+    return new Promise((resolve, reject) => {
+      const agent = this.agents[agentId];
+
+      if (!agent) {
+        return reject(new Error(`There is no existing agent with id: ${convId}`));
+      }
+
+      if (!agent.openConversations[convId]) {
+        return reject(new Error(`There is no existing open conversation with id: ${convId}`));
+      }
+
+      return resolve(agent.openConversations[convId].conversationDetails);
+    });
+  }
+
   async init() {
     log.info('Starting wiser-lp service');
 

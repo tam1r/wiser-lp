@@ -44,15 +44,18 @@ let connection;
   app.use('/docs', swagger.serve, swagger.setup(docs, docsConfig));
 
   app.post('/unregister-client', async (req, res) => { // eslint-disable-line
-    const validatedMetadata = await schema.validate(req.body, schemas.user.endpoints.unregisterClient) // eslint-disable-line
-      .catch((error) => {
-        signale.fatal(error);
-        return res.status(400).send(error);
-      });
+    const validatedMetadata = await schema.validate(
+      req.body,
+      schemas.user.endpoints.unregisterClient,
+    ).catch((error) => {
+      signale.fatal(error);
+      return res.status(400).send(error);
+    });
 
     // TODO: remove the agent from the AgentsClusterService
     // TODO: remove account from the DB
 
+    console.log(validatedMetadata);
     return res.send('Endpoint in development');
   });
 
@@ -93,15 +96,19 @@ let connection;
   });
 
   app.put('/update-metadata', async (req, res) => {
-    const validatedMetadata = await schema.validate(req.body, schemas.user.endpoints.updateMetadata) // eslint-disable-line
-      .catch((error) => {
-        signale.fatal(error);
-        return res.status(400).send(error);
-      });
+    const validatedMetadata = await schema.validate(
+      req.body,
+      schemas.user.endpoints.updateMetadata,
+    ).catch((error) => {
+      signale.fatal(error);
+      return res.status(400).send(error);
+    });
 
     // TODO: remove the agent from the AgentsClusterService
     // TODO: update values in the DB
     // TODO: re-initalize the agent's account with recently update account
+
+    console.log(validatedMetadata);
 
     return res.send('Endpoint in development');
   });
@@ -129,14 +136,30 @@ let connection;
   });
 
   app.get('/conversation-details', async (req, res) => {
-    const { accountId, convId } = req.body;
+    const validatedMetadata = await schema.validate(
+      req.body,
+      schemas.user.endpoints.getConversationDetails,
+    ).catch((error) => {
+      signale.fatal(error);
+      return res.status(400).send(error);
+    });
 
-    if (!accountId) return res.status(400).send('missing `accountId` parameter');
-    if (!convId) return res.status(400).send('missing `convId` parameter');
+    const {
+      accountId,
+      convId,
+    } = validatedMetadata;
 
-    const conversationDetails = await AgentsClusterService.agents[accountId].getConversationDetails(convId); // eslint-disable-line
+    try {
+      const conversationDetails = await AgentsClusterService.getConversationDetails(
+        accountId,
+        convId,
+      );
 
-    return res.status(200).send(conversationDetails);
+      return res.status(200).send(conversationDetails);
+    } catch (error) {
+      console.log(error);
+      return res.status(400).send(error);
+    }
   });
 
   app.get('/', (req, res) => res.status(200).send('WiserLP'));

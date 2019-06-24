@@ -148,6 +148,7 @@ class WiserAgent extends Agent {
           await triggerWebhook(this.webhooks.new_message_arrived, {
             convId,
             convDetails: parsedConversationDetails,
+            messageDetails,
           });
 
           this.signale.success(

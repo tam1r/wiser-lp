@@ -179,6 +179,148 @@ function keepAwake() {
     return res.status(200).send(response);
   });
 
+  app.post('/lp-freightbot', async (req, res) => {
+    let {
+      shippingMethod,
+      portOrigin,
+      portDest,
+      weight,
+      volume,
+    } = req.body;
+
+    if (!shippingMethod && !portOrigin && !portDest) {
+      ({
+        shippingMethod,
+        portOrigin,
+        portDest,
+        weight,
+        volume,
+      } = req.query);
+    }
+
+    if (!shippingMethod) return res.status(422).send('Missing `shippingMethod` parameter');
+    if (!portOrigin) return res.status(422).send('Missing `portOrigin` parameter');
+    if (!portDest) return res.status(422).send('Missing `portDest` parameter');
+
+    if (shippingMethod === 'lcl' || shippingMethod === 'road' || shippingMethod === 'air') {
+      if (!weight) return res.status(422).send('Missing `weight` parameter');
+
+      if (shippingMethod === 'lcl' || shippingMethod === 'road') {
+        if (!volume) return res.status(422).send('Missing `volume` parameter');
+      }
+    }
+
+    const response = {};
+    let latOrigin = '';
+    let lngOrigin = '';
+    let latDest = '';
+    let lngDest = '';
+
+    console.log(`
+      Received:
+      shippingMethod: ${shippingMethod}
+      portOrigin: ${portOrigin}
+      portDest: ${portDest}
+      weight: ${weight || null}
+      volume: ${volume || null}
+    `);
+
+    // google places api call
+    try {
+      const portOriginURL = `https://google-maps-geocoding.p.rapidapi.com/geocode/json?language=en&address="${portOrigin}"`;
+      console.log(`waiting for: ${portOriginURL}`);
+      const {
+        data: _portOrigin,
+      } = await axios.get(portOriginURL, { headers: googlePlacesHeaders });
+      latOrigin = _portOrigin.results[0].geometry.location.lat;
+      lngOrigin = _portOrigin.results[0].geometry.location.lng;
+
+      const portDestURL = `https://google-maps-geocoding.p.rapidapi.com/geocode/json?language=en&address="${portDest}"`;
+      console.log(`waiting for: ${portDestURL}`);
+      const {
+        data: _portDest,
+      } = await axios.get(portDestURL, { headers: googlePlacesHeaders });
+      latDest = _portDest.results[0].geometry.location.lat;
+      lngDest = _portDest.results[0].geometry.location.lng;
+
+      console.log(`
+        latOrigin: ${latOrigin}
+        lngOrigin: ${lngOrigin}
+        latDest: ${latDest}
+        lngDest: ${lngDest}
+      `);
+    } catch (error) {
+      return res.status(500).send({
+        msg: 'Error occurred processing Google places API',
+        error,
+      });
+    }
+
+    // searates api call
+    try {
+      let seaRatesURL = `${seaRatesBaseURLs[shippingMethod]}?apiKey=${seaRatesApiKey}&lat_from=${latOrigin}&lng_from=${lngOrigin}&lat_to=${latDest}&lng_to=${lngDest}`;
+
+      if (shippingMethod === 'lcl' || shippingMethod === 'road' || shippingMethod === 'air') {
+        seaRatesURL += `weight=${weight}`;
+
+        if (shippingMethod === 'lcl' || shippingMethod === 'road') {
+          seaRatesURL += `volume=${volume}`;
+        }
+      }
+
+      console.log(`waiting for ${seaRatesURL}`);
+
+      const { data: seaRatesResponse } = await axios.get(seaRatesURL).catch(console.error);
+
+      console.log(`RESPONSE: ${JSON.stringify(seaRatesResponse)}`);
+
+      if (shippingMethod === 'fcl') {
+        response.rate = seaRatesResponse.rates.fcl[0]['20st'] || 'Unknown';
+        response.sealine = seaRatesResponse.rates.fcl[0].sealine || 'Unknown'; // eslint-disable-line
+        response.currency = seaRatesResponse.rates.fcl[0].currency || 'Unknown'; // eslint-disable-line
+        response.shippingCompany = seaRatesResponse.rates.fcl[0].company_name || 'Unknown';
+        response.shippingTime = seaRatesResponse.rates.fcl[0].transit_time || 'Unknown';
+      }
+
+      if (shippingMethod === 'rail') {
+        response.rate = seaRatesResponse.rates[0].rate || 'Unknown'; // eslint-disable-line
+        response.currency = seaRatesResponse.rates[0].currency || 'Unknown'; // eslint-disable-line
+        response.shippingCompany = seaRatesResponse.rates[0].company || 'Unknown';
+        response.transit_time = seaRatesResponse.rates[0].transit_time || 'Unknown';
+        response.distance = seaRatesResponse.rates[0].distance || 'Unknown';
+      }
+
+      if (shippingMethod === 'lcl') {
+        response.rate = seaRatesResponse.rates.lcl[0].rate || 'Unknown';
+        response.shippingCompany = seaRatesResponse.rates.lcl[0].company_name || 'Unknown';
+        response.transit_time = seaRatesResponse.rates.lcl[0].transit_time || 'Unknown';
+      }
+
+      if (shippingMethod === 'road') {
+        response.rate = seaRatesResponse.rates[0].rate || 'Unknown';
+        response.currency = seaRatesResponse.rates[0].currency || 'Unknown';
+        response.shippingCompany = seaRatesResponse.rates[0].company_name || 'Unknown';
+        response.transit_time = seaRatesResponse.rates[0].transit_time || 'Unknown';
+        response.distance = seaRatesResponse.rates[0].distance || 'Unknown';
+      }
+
+      if (shippingMethod === 'air') {
+        response.rate = seaRatesResponse.rates.air[0].rate || 'Unknown';
+        response.shippingCompany = seaRatesResponse.rates.air[0].company_name || 'Unknown';
+        response.transit_time = seaRatesResponse.rates.air[0].transit_time || 'Unknown';
+      }
+    } catch (error) {
+      return res.status(500).send({
+        msg: 'Error occurred processing Searates API',
+        error,
+      });
+    }
+
+    console.log(`response:\n${JSON.stringify(response)}`);
+
+    return res.status(200).send(response);
+  });
+
   app.get('/', (req, res) => res.status(200).send('LP-freightbot'));
 
   app.listen(process.env.PORT || PORT, async () => {

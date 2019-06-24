@@ -86,7 +86,7 @@ let connection;
 
     signale.success(
       log.success('Successfully registered user with credentials:\n'),
-      JSON.stringify(credentials),
+      log.obj(credentials),
     );
 
     return res.status(200).send('Register success');
@@ -128,11 +128,23 @@ let connection;
     return res.status(response.code).send(response.message);
   });
 
+  app.get('/conversation-details', async (req, res) => {
+    const { accountId, convId } = req.body;
+
+    if (!accountId) return res.status(400).send('missing `accountId` parameter');
+    if (!convId) return res.status(400).send('missing `convId` parameter');
+
+    const conversationDetails = await AgentsClusterService.agents[accountId].getConversationDetails(convId); // eslint-disable-line
+
+    return res.status(200).send(conversationDetails);
+  });
+
   app.get('/', (req, res) => res.status(200).send('WiserLP'));
 
   app.listen(process.env.PORT || PORT, async () => {
     signale.success(
       log.success(`Server listening on port ${process.env.PORT || PORT}!`),
+      log.success('Documentation running under /docs'),
     );
   });
 })();

@@ -41,8 +41,8 @@ class WiserAgent extends Agent {
           }, (error, response) => {
             if (error) {
               this.signale.fatal(
-                'Error sending message:\n',
-                JSON.stringify(error),
+                log.error('Error sending message:\n'),
+                log.obj(error),
               );
               resolve({
                 code: error.code,
@@ -51,8 +51,8 @@ class WiserAgent extends Agent {
             }
 
             this.signale.success(
-              'Send message response:\n',
-              JSON.stringify(response),
+              log.error('Send message response:\n'),
+              log.obj(response),
             );
 
             resolve({
@@ -126,9 +126,19 @@ class WiserAgent extends Agent {
         const { startTs } = conversationDetails;
 
         const messageDetails = await Utils.extractMessageDetails(change, this.signale);
-        const parsedConversationDetails = await Utils.extractConversationDetails(this, change);
+        const parsedConversationDetails = await Utils.extractConversationDetails(this, change)
+          .catch(signale.fatal);
 
-        // new_message_arrived trigger
+
+        signale.info(
+          log.debug('MESSAGE DETAILS'),
+          log.obj(messageDetails),
+        );
+
+        /*
+          [WEBHOOK_TRIGGER]
+          | name: new_message_arrived
+        */
         if (this.webhooks.new_message_arrived) {
           await triggerWebhook(this.webhooks.new_message_arrived, {
             convId,
@@ -143,8 +153,28 @@ class WiserAgent extends Agent {
           );
         }
 
+        /*
+          [WEBHOOK_TRIGGER]
+          | name: coordinates_webhook trigger
+        */
+        if (messageDetails.location && this.webhooks.coordinates_webhook) {
+          await triggerWebhook(this.webhooks.coordinates_webhook, {
+            messageDetails,
+            conversationDetails: parsedConversationDetails,
+          });
+
+          this.signale.success(
+            log.success(`successfully triggered webhook: ${this.webhooks.coordinates_webhook}\n`),
+          );
+        }
+
         if (messageDetails.type === 'hosted/file') {
-          const fileURL = await Utils.generateURLForDownloadFile(this, messageDetails.relativePath);
+          const fileURL = await Utils.generateURLForDownloadFile(this, messageDetails.relativePath)
+            .catch((error) => {
+              this.signale.fatal(
+                log.error(new Error(log.obj(error))),
+              );
+            });
 
           if (this.webhooks.new_file_in_conversation_webhook) {
             await triggerWebhook(this.webhooks.new_file_in_conversation_webhook, {
@@ -176,13 +206,17 @@ class WiserAgent extends Agent {
           // New conversation
           this.openConversations[convId] = {};
 
+          /*
+            [WEBHOOK_TRIGGER]
+            | name: new_conversation_webhook
+          */
           if (this.webhooks.new_conversation_webhook) {
             await triggerWebhook(this.webhooks.new_conversation_webhook, parsedConversationDetails);
             log.success(
               `successfully triggered webhook: ${this.webhooks.new_conversation_webhook}
               accountId: ${this.conf.accountId}
               convId: ${convId}
-              convDetails: ${log.object(parsedConversationDetails)}`,
+              convDetails: ${log.obj(parsedConversationDetails)}`,
             );
           }
 

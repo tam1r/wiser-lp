@@ -24,6 +24,10 @@ module.exports = schema({
         type: String,
         required: false,
       },
+      coordinates_webhook: {
+        type: String,
+        required: false,
+      },
     },
   },
 });

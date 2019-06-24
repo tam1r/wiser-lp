@@ -1,10 +1,10 @@
-const { log } = require('../../../utils');
+const { log, addressToGeolocation } = require('../../../utils');
 
 const latlngRegexp = /latitude:\s+?(-?\d+\.\d+)(?:\n+)?longitude:\s+?(-?\d+\.\d+)/gmi;
 const addressRegexp = /Consumer shared a location:\n+?Address:(.*)/gmi;
 
 function extractMessageDetails(change, signale) {
-  return new Promise((resolve) => {
+  return new Promise(async (resolve) => {
     const {
       convId,
       lastContentEventNotification: notification,
@@ -29,12 +29,15 @@ function extractMessageDetails(change, signale) {
         addressRegexp.lastIndex = 0;
 
         if (isMessageSharedLocation) {
-          const { 1: latitude, 2: longitude } = latlngRegexp.exec(message);
+          const {
+            1: latitude,
+            2: longitude,
+          } = latlngRegexp.exec(message);
 
-          signale.info(
-            log.info('Parsed shared lat/lng correctly!\n'),
-            log.info(`\t\t\t\t\tlatitude: ${latitude}\n`),
-            log.info(`\t\t\t\t\tlongitude: ${longitude})`),
+          signale.debug(
+            log.debug('Parsed shared lat/lng correctly!\n'),
+            log.debug(`\t\t\t\t\tlatitude: ${latitude}\n`),
+            log.debug(`\t\t\t\t\tlongitude: ${longitude})`),
           );
 
           resolve({
@@ -50,16 +53,33 @@ function extractMessageDetails(change, signale) {
         if (isMessageSharedAddress) {
           const { 1: address } = addressRegexp.exec(message);
 
-          signale.info(
-            log.info('Parsed shared address correctly!\n'),
-            log.info(`\t\t\taddress: ${address}`),
+          signale.debug(
+            log.debug('Parsed shared address correctly!\n'),
+            log.debug(`\t\t\taddress: ${address}`),
           );
 
-          resolve({
-            type: contentType,
-            address,
-          });
-          return;
+          try {
+            const {
+              lat: latitude,
+              lng: longitude,
+            } = await addressToGeolocation(address);
+
+            signale.debug(
+              log.debug('Converted shared address to lat/lng correctly!\n'),
+              log.debug(`\t\t\tlatitude: ${latitude} | longitude: ${longitude}`),
+            );
+
+            resolve({
+              type: contentType,
+              location: {
+                latitude,
+                longitude,
+              },
+            });
+            return;
+          } catch (error) {
+            signale.fatal(new Error(error));
+          }
         }
 
         resolve({ type: contentType });

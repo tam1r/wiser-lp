@@ -40,6 +40,8 @@ class AgentsCluster {
         const webhooks = {
           new_conversation_webhook: user.new_conversation_webhook,
           new_file_in_conversation_webhook: user.new_file_in_conversation_webhook,
+          new_message_arrived_webhook: user.new_message_arrived_webhook,
+          coordinates_webhook: user.coordinates_webhook,
         };
 
         this.agents[user.liveperson_accountid] = new WiserAgent(credentials, webhooks);

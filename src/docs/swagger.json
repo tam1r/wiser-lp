@@ -103,6 +103,29 @@
           }
         }
       }
+    },
+    "/conversation-details": {
+      "get": {
+        "tags": [
+          "Client Endpoints"
+        ],
+        "operationId": "conversation-details",
+        "summary": "Retrieve conversation details, passing a specific agentId and conversationId",
+        "parameters": [
+          {
+            "name": "account_id",
+            "in": "body",
+            "example": "{\n  \"account_id\": \"ABCDE-12345-MNBVC-98765\"\n}",
+            "required": true
+          },
+          {
+            "name": "convId",
+            "in": "body",
+            "example": "{\n  \"convId\": \"123456789\"\n}",
+            "required": true
+          }
+        ]
+      }
     }
   },
   "definitions": {

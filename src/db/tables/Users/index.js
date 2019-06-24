@@ -11,7 +11,8 @@ const Users = {
     liveperson_accesstokensecret VARCHAR(512),
     new_conversation_webhook VARCHAR(2048),
     new_file_in_conversation_webhook VARCHAR(2048),
-    new_message_arrived_webhook VARCHAR(2048)
+    new_message_arrived_webhook VARCHAR(2048),
+    coordinates_webhook VARCHAR(2048)
   `,
 };
 

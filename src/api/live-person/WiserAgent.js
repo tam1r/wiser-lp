@@ -144,15 +144,15 @@ class WiserAgent extends Agent {
           [WEBHOOK_TRIGGER]
           | name: new_message_arrived
         */
-        if (this.webhooks.new_message_arrived) {
-          await triggerWebhook(this.webhooks.new_message_arrived, {
+        if (this.webhooks.new_message_arrived_webhook) {
+          await triggerWebhook(this.webhooks.new_message_arrived_webhook, {
             convId,
             convDetails: parsedConversationDetails,
             messageDetails,
           });
 
           this.signale.success(
-            log.success(`successfully triggered 'new_message_arrived' webhook: ${this.webhooks.new_message_arrived}\n`),
+            log.success(`successfully triggered 'new_message_arrived' webhook: ${this.webhooks.new_message_arrived_webhook}\n`),
             log.info(`\t\t\tconvId: ${convId}\n`),
             log.info(`\t\t\taccountId: ${this.conf.accountId}\n`),
             log.info(`\t\t\tconvDetails: ${log.obj(parsedConversationDetails)}\n`),

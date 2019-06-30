@@ -82,7 +82,10 @@ function extractMessageDetails(change, signale) {
           }
         }
 
-        resolve({ type: contentType });
+        resolve({
+          type: contentType,
+          message,
+        });
         return;
       }
 
@@ -100,6 +103,7 @@ function extractMessageDetails(change, signale) {
         resolve({
           type: contentType,
           relativePath,
+          message,
         });
       }
     }

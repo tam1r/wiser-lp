@@ -11,8 +11,14 @@ function extractMessageDetails(change, signale) {
     } = change.result;
 
     if (notification) {
-      const userId = notification.originatorPId || 'NOT_FOUND';
-      const { contentType, message } = notification.event;
+      const {
+        serverTimestamp,
+        dialogId,
+        event,
+        originatorPId,
+      } = notification;
+      const { contentType, message } = event;
+      const userId = originatorPId || 'NOT_FOUND';
 
       if (contentType === 'text/plain') {
         signale.info(
@@ -46,6 +52,7 @@ function extractMessageDetails(change, signale) {
               latitude,
               longitude,
             },
+            messageId: `${serverTimestamp}-${dialogId}-${message}`,
           });
           return;
         }
@@ -85,6 +92,7 @@ function extractMessageDetails(change, signale) {
         resolve({
           type: contentType,
           message,
+          messageId: `${serverTimestamp}-${dialogId}-${message}`,
         });
         return;
       }
@@ -95,7 +103,7 @@ function extractMessageDetails(change, signale) {
         signale.debug(
           log.info('New media message!\n'),
           log.info(`\t\t\tConversation id: ${convId}\n`),
-          log.info(`\t\t\tDialogId: ${notification.dialogId}\n`),
+          log.info(`\t\t\tDialogId: ${dialogId}\n`),
           log.info(`\t\t\tFrom userId: ${userId}\n`),
           log.info(`\t\t\tRelative Path: ${relativePath}`),
         );
@@ -104,6 +112,7 @@ function extractMessageDetails(change, signale) {
           type: contentType,
           relativePath,
           message,
+          messageId: `${serverTimestamp}-${dialogId}-${message}`,
         });
       }
     }

@@ -122,29 +122,46 @@ class WiserAgent extends Agent {
     // Notification on changes in the open consversation list
     this.on('cqm.ExConversationChangeNotification', (notificationBody) => {
       notificationBody.changes.forEach(async (change) => {
-        const { convId, conversationDetails } = change.result;
+        const { convId, conversationDetails, lastContentEventNotification } = change.result;
+        const { originatorMetadata } = lastContentEventNotification;
         const { startTs } = conversationDetails;
+        let isFirstMessage = false;
+
+        if (originatorMetadata.id === this.agentId) {
+          console.log('\n\nSKIPPED\n\n');
+          return; // ignore messages sent by the agent
+        }
 
         const messageDetails = await Utils.extractMessageDetails(change, this.signale);
         const parsedConversationDetails = await Utils.extractConversationDetails(this, change)
           .catch(signale.fatal);
+
+        const { messageId } = messageDetails;
 
         signale.info(
           log.debug('MESSAGE DETAILS'),
           log.obj(messageDetails),
         );
 
-        if (!this.openConversations.conversationDetails) {
+        if (!this.openConversations[convId]) {
+          this.signale.success('Successfully added conversation details to `openConversations`');
+
+          isFirstMessage = true;
           this.openConversations[convId] = {
             conversationDetails: parsedConversationDetails,
+            seenMessagesId: [messageId],
           };
         }
 
         /*
           [WEBHOOK_TRIGGER]
           | name: new_message_arrived
+          | description: triggers whenever there is a new message
         */
-        if (this.webhooks.new_message_arrived_webhook) {
+        if (
+          this.webhooks.new_message_arrived_webhook
+          && (!this.openConversations[convId].seenMessagesId.includes(messageId) || isFirstMessage)
+        ) {
           await triggerWebhook(this.webhooks.new_message_arrived_webhook, {
             convId,
             convDetails: parsedConversationDetails,
@@ -159,11 +176,27 @@ class WiserAgent extends Agent {
           );
         }
 
+        if (this.openConversations[convId]) {
+          // keep history of messageId up till message n° 500
+          if (this.openConversations[convId].seenMessagesId.length > 500) {
+            this.openConversations[convId].seenMessagesId.shift(); // remove first seenMessageId
+          } else if (!this.openConversations[convId].seenMessagesId.includes(messageId)) {
+            // push the messageId of the received message
+            // always push it after checking for triggering the `new_message_arrived_webhook` hook
+            this.openConversations[convId].seenMessagesId.push(messageId);
+          }
+        }
+
         /*
           [WEBHOOK_TRIGGER]
           | name: coordinates_webhook trigger
+          | description: triggers whenever there is a new message that
+          | contains coordinates information
         */
-        if (messageDetails.location && this.webhooks.coordinates_webhook) {
+        if (
+          messageDetails.location
+          && this.webhooks.coordinates_webhook
+        ) {
           await triggerWebhook(this.webhooks.coordinates_webhook, {
             messageDetails,
             conversationDetails: parsedConversationDetails,
@@ -174,6 +207,12 @@ class WiserAgent extends Agent {
           );
         }
 
+        /*
+          [WEBHOOK_TRIGGER]
+          | name: new_file_in_conversation trigger
+          | description: triggeres whenever there is a new message that
+          | contains a media file
+        */
         if (messageDetails.type === 'hosted/file') {
           const fileURL = await Utils.generateURLForDownloadFile(this, messageDetails.relativePath)
             .catch((error) => {
@@ -209,11 +248,10 @@ class WiserAgent extends Agent {
           && !this.openConversations[convId]
           && Utils.isConversationRecentlyCreated(startTs)
         ) {
-          // New conversation
-
           /*
             [WEBHOOK_TRIGGER]
             | name: new_conversation_webhook
+            | description: triggers whenever there is a new conversation
           */
           if (this.webhooks.new_conversation_webhook) {
             await triggerWebhook(this.webhooks.new_conversation_webhook, parsedConversationDetails);

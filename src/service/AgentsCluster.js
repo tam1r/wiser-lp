@@ -1,3 +1,4 @@
+const signale = require('signale');
 const { log } = require('../utils');
 const { promisifyQuery } = require('../db');
 const WiserAgent = require('../api/live-person/WiserAgent');
@@ -9,6 +10,22 @@ class AgentsCluster {
     this.init();
   }
 
+  async getConversationDetails(agentId, convId) {
+    return new Promise((resolve, reject) => {
+      const agent = this.agents[agentId];
+
+      if (!agent) {
+        return reject(new Error(`There is no existing agent with id: ${convId}`));
+      }
+
+      if (!agent.openConversations[convId]) {
+        return reject(new Error(`There is no existing open conversation with id: ${convId}`));
+      }
+
+      return resolve(agent.openConversations[convId].conversationDetails);
+    });
+  }
+
   async init() {
     log.info('Starting wiser-lp service');
 
@@ -18,6 +35,7 @@ class AgentsCluster {
     if (response.length) {
       response.forEach(async (user) => {
         let credentials;
+
         if (user.liveperson_password && user.liveperson_password !== '') { // login using username/password
           credentials = {
             username: user.username,
@@ -38,13 +56,20 @@ class AgentsCluster {
         const webhooks = {
           new_conversation_webhook: user.new_conversation_webhook,
           new_file_in_conversation_webhook: user.new_file_in_conversation_webhook,
+          new_message_arrived_webhook: user.new_message_arrived_webhook,
+          coordinates_webhook: user.coordinates_webhook,
         };
+
         this.agents[user.liveperson_accountid] = new WiserAgent(credentials, webhooks);
 
-        log.info(`Started liveperson service for user: ${user.username} | ${user.liveperson_accountid}`);
+        signale.success(
+          log.success(`Started liveperson service for user: ${user.username} | ${user.liveperson_accountid}`),
+        );
       });
     } else {
-      log.message('No agents existing in the database');
+      signale.debug(
+        log.warning('No agents existing in the database'),
+      );
     }
   }
 }

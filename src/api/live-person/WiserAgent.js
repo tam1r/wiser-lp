@@ -1,3 +1,4 @@
+const signale = require('signale');
 const { Agent } = require('node-agent-sdk');
 const Sentry = require('@sentry/node');
 const { log, triggerWebhook } = require('../../utils');
@@ -15,13 +16,18 @@ class WiserAgent extends Agent {
     this.webhooks = webhooks;
     this.consumerId = undefined;
     this.openConversations = {};
+    this.signale = signale;
     this.init();
   }
 
   async sendMessage(params) {
     return new Promise(async (resolve) => {
       const { dialogId, contentType, message } = params;
-      log.message(`Send message init, params:\n${log.object(params)}`);
+      this.signale.debug(
+        'Send message init',
+        'params: \n',
+        params,
+      );
 
       switch (contentType) {
         case 'text/plain':
@@ -34,14 +40,21 @@ class WiserAgent extends Agent {
             },
           }, (error, response) => {
             if (error) {
-              log.error(`Error sending message: ${log.object(error)}`);
+              this.signale.fatal(
+                log.error('Error sending message:\n'),
+                log.obj(error),
+              );
               resolve({
                 code: error.code,
                 message: error.body,
               });
             }
 
-            log.message(`Send message response: ${log.object(response)}`);
+            this.signale.success(
+              log.error('Send message response:\n'),
+              log.obj(response),
+            );
+
             resolve({
               code: 200,
               message: 'Message sent',
@@ -64,21 +77,25 @@ class WiserAgent extends Agent {
       this.connecting = false;
       if (this._retryConnection) clearTimeout(this._retryConnection);
 
-      log.message(`Successfully connected agent with accountId: ${this.conf.accountId}`);
+      this.signale.success(
+        log.success(`Successfully connected agent with accountId: ${this.conf.accountId}`),
+      );
+
+      this.signale = this.signale.scope(this.conf.accountId);
 
       // make the agent visibity to "online"
       this.setAgentState({ availability: 'ONLINE' });
 
       this.subscribeExConversations({ convState: ['OPEN'] }, (error, response) => {
         if (error) {
-          log.error(error);
+          this.signale.error(error);
           return;
         }
 
-        log.success(
-          `Successfully subscribed to new conversations
-          subscriptionId: ${log.object(response.subscriptionId)}
-          accountId: ${this.conf.accountId}`,
+        this.signale.success(
+          log.success('Successfully subscribed to new conversations\n'),
+          log.info(`\t\t\t\tsubscriptionId: ${JSON.stringify(response.subscriptionId)}\n`),
+          log.info(`\t\t\t\taccountId: ${this.conf.accountId}`),
         );
       });
 
@@ -105,28 +122,125 @@ class WiserAgent extends Agent {
     // Notification on changes in the open consversation list
     this.on('cqm.ExConversationChangeNotification', (notificationBody) => {
       notificationBody.changes.forEach(async (change) => {
-        const { convId, conversationDetails } = change.result;
+        const { convId, conversationDetails, lastContentEventNotification } = change.result;
+        const { originatorMetadata } = lastContentEventNotification;
         const { startTs } = conversationDetails;
+        let isFirstMessage = false;
 
-        const messageDetails = await Utils.extractMessageDetails(change);
-        const parsedConversationDetails = await Utils.extractConversationDetails(this, change);
+        if (originatorMetadata.id === this.agentId) {
+          console.log('\n\nSKIPPED\n\n');
+          return; // ignore messages sent by the agent
+        }
 
+        const messageDetails = await Utils.extractMessageDetails(change, this.signale);
+        const parsedConversationDetails = await Utils.extractConversationDetails(this, change)
+          .catch(signale.fatal);
+
+        const { messageId } = messageDetails;
+
+        signale.info(
+          log.debug('MESSAGE DETAILS'),
+          log.obj(messageDetails),
+        );
+
+        if (!this.openConversations[convId]) {
+          this.signale.success('Successfully added conversation details to `openConversations`');
+
+          isFirstMessage = true;
+          this.openConversations[convId] = {
+            conversationDetails: parsedConversationDetails,
+            seenMessagesId: [messageId],
+          };
+        }
+
+        /*
+          [WEBHOOK_TRIGGER]
+          | name: new_message_arrived
+          | description: triggers whenever there is a new message
+        */
+        if (
+          this.webhooks.new_message_arrived_webhook
+          && (!this.openConversations[convId].seenMessagesId.includes(messageId) || isFirstMessage)
+        ) {
+          await triggerWebhook(this.webhooks.new_message_arrived_webhook, {
+            convId,
+            convDetails: parsedConversationDetails,
+            messageDetails,
+          });
+
+          this.signale.success(
+            log.success(`successfully triggered 'new_message_arrived' webhook: ${this.webhooks.new_message_arrived_webhook}\n`),
+            log.info(`\t\t\tconvId: ${convId}\n`),
+            log.info(`\t\t\taccountId: ${this.conf.accountId}\n`),
+            log.info(`\t\t\tconvDetails: ${log.obj(parsedConversationDetails)}\n`),
+          );
+        }
+
+        if (this.openConversations[convId]) {
+          // keep history of messageId up till message n° 500
+          if (this.openConversations[convId].seenMessagesId.length > 500) {
+            this.openConversations[convId].seenMessagesId.shift(); // remove first seenMessageId
+          } else if (!this.openConversations[convId].seenMessagesId.includes(messageId)) {
+            // push the messageId of the received message
+            // always push it after checking for triggering the `new_message_arrived_webhook` hook
+            this.openConversations[convId].seenMessagesId.push(messageId);
+          }
+        }
+
+        /*
+          [WEBHOOK_TRIGGER]
+          | name: coordinates_webhook trigger
+          | description: triggers whenever there is a new message that
+          | contains coordinates information
+        */
+        if (
+          messageDetails.location
+          && this.webhooks.coordinates_webhook
+        ) {
+          await triggerWebhook(this.webhooks.coordinates_webhook, {
+            messageDetails,
+            conversationDetails: parsedConversationDetails,
+          });
+
+          this.signale.success(
+            log.success(`successfully triggered webhook: ${this.webhooks.coordinates_webhook}\n`),
+          );
+        }
+
+        /*
+          [WEBHOOK_TRIGGER]
+          | name: new_file_in_conversation trigger
+          | description: triggeres whenever there is a new message that
+          | contains a media file
+        */
         if (messageDetails.type === 'hosted/file') {
-          const fileURL = await Utils.generateURLForDownloadFile(this, messageDetails.relativePath);
+          const fileURL = await Utils.generateURLForDownloadFile(this, messageDetails.relativePath)
+            .catch((error) => {
+              this.signale.fatal(
+                log.error(new Error(log.obj(error))),
+              );
+            });
+
           if (this.webhooks.new_file_in_conversation_webhook) {
             await triggerWebhook(this.webhooks.new_file_in_conversation_webhook, {
               fileURL,
               convId,
               convDetails: parsedConversationDetails,
             });
-            log.success(
-              `successfully triggered webhook: ${this.webhooks.new_file_in_conversation_webhook}
-              convId: ${convId}
-              accountId: ${this.conf.accountId}
-              convDetails: ${log.object(parsedConversationDetails)}`,
+
+            this.signale.success(
+              log.success(`successfully triggered 'new_file_in_conversation' webhook: ${this.webhooks.new_file_in_conversation_webhook}\n`),
+              log.info(`\t\t\tconvId: ${convId}\n`),
+              log.info(`\t\t\taccountId: ${this.conf.accountId}\n`),
+              log.info(`\t\t\tconvDetails: ${log.obj(parsedConversationDetails)}`),
             );
           }
-          log.success(`Successfully generated download file URL!\nConvId:   ${convId}\nURL:      ${fileURL}`);
+
+          this.signale.success(
+            log.success('Successfully generated download file URL!\n'),
+            log.info(`\t\t\tConvId: ${convId}\n`),
+            log.info(`\t\t\tURL: ${fileURL}`),
+          );
         }
 
         if (
@@ -134,16 +248,19 @@ class WiserAgent extends Agent {
           && !this.openConversations[convId]
           && Utils.isConversationRecentlyCreated(startTs)
         ) {
-          // New conversation
-          this.openConversations[convId] = {};
-
+          /*
+            [WEBHOOK_TRIGGER]
+            | name: new_conversation_webhook
+            | description: triggers whenever there is a new conversation
+          */
           if (this.webhooks.new_conversation_webhook) {
             await triggerWebhook(this.webhooks.new_conversation_webhook, parsedConversationDetails);
+
             log.success(
               `successfully triggered webhook: ${this.webhooks.new_conversation_webhook}
               accountId: ${this.conf.accountId}
               convId: ${convId}
-              convDetails: ${log.object(parsedConversationDetails)}`,
+              convDetails: ${log.obj(parsedConversationDetails)}`,
             );
           }
 
@@ -161,15 +278,17 @@ class WiserAgent extends Agent {
           // an unauthenticated to an authenticated user.
           this.consumerId = change.result.conversationDetails.participants.filter(p => p.role === 'CONSUMER')[0].id;
 
-          this.getUserProfile(this.consumerId, (e, profileResp) => {
-            console.log('consumer id changed: ', profileResp);
+          this.getUserProfile(this.consumerId, (e, profileResp) => { // eslint-disable-line
+            this.signale.info('consumer id changed');
           });
         } else if (change.type === 'DELETE') {
           // conversation was closed or transferred
           delete this.openConversations[convId];
         } else {
           // something else happened
-          log.message(`Unhandled event occured in conversation: ${convId}`);
+          this.signale.debug(
+            log.gray(`Unhandled event occured in conversation: ${convId}`),
+          );
         }
       });
     });
@@ -183,7 +302,9 @@ class WiserAgent extends Agent {
 
       if (this.connecting) {
         this._retryConnection = setTimeout(() => {
-          log.info(`Attempting to reconnect agent ${agent} | attempt ${attempt} | next delay ${nextDelay}`);
+          this.signale.debug(
+            log.warning(`Attempting to reconnect agent ${agent} | attempt ${attempt} | next delay ${nextDelay}`),
+          );
 
           if (this.connecting) {
             this.reconnect();
@@ -198,7 +319,8 @@ class WiserAgent extends Agent {
 
     this.on('error', (error) => {
       Sentry.captureException(error);
-      log.error('Error ', error);
+
+      this.signale.fatal(new Error(log.obj(error)));
 
       if (error && error.code === 401) {
         this.connecting = true;
@@ -206,8 +328,9 @@ class WiserAgent extends Agent {
       }
     });
 
-    this.on('closed', (data) => {
-      log.warning('Socket closed: ', data);
+    this.on('closed', () => {
+      this.signale.fatal(new Error('Socket closed'));
+
       clearInterval(this.pingClock);
       this.connecting = true;
       this._reconnect();

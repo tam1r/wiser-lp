@@ -9,9 +9,10 @@ const Users = {
     liveperson_secret VARCHAR(256),
     liveperson_accesstoken VARCHAR(512),
     liveperson_accesstokensecret VARCHAR(512),
-    zapier_apikey VARCHAR(2048),
     new_conversation_webhook VARCHAR(2048),
-    new_file_in_conversation_webhook VARCHAR(2048)
+    new_file_in_conversation_webhook VARCHAR(2048),
+    new_message_arrived_webhook VARCHAR(2048),
+    coordinates_webhook VARCHAR(2048)
   `,
 };
 

@@ -5,13 +5,13 @@
     "version": "v1"
   },
   "tags": [{
-    "name": "Endpoints"
+    "name": "Client Endpoints"
   }],
   "paths": {
     "/register-client": {
       "post": {
         "tags": [
-          "Endpoints"
+          "Client Endpoints"
         ],
         "operationId": "register-client",
         "summary": "Register a new client, you can do so using both username/password or appkey/secret/accessToken/accessTokenSecret, consult the models below",
@@ -35,10 +35,52 @@
         }
       }
     },
+    "/unregister-client": {
+      "delete": {
+        "tags": [
+          "Client Endpoints"
+        ],
+        "operationId": "unregister-client",
+        "summary": "Remove entirely from the system a given user",
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "body",
+            "example": "{\n  \"accountId\": \"ABCDE-12345-MNBVC-98765\"\n}",
+            "required": true
+          }
+        ]
+      }
+    },
+    "/update-metadata": {
+      "put": {
+        "tags": [
+          "Client Endpoints"
+        ],
+        "operationId": "update-metadata",
+        "summary": "Update all of the account-related parameters, except for the username",
+        "parameters": [
+          {
+            "name": "User",
+            "in": "body",
+            "example": "{\n  \"accountId\": \"ABCDE-12345-MNBVC-98765\",\n  \"webhooks\": {\n    \"new_conversation_webhook\": \"https://hooks.zapier.com/hooks/catch/1646904/73834/\",\n    \"new_file_in_conversation_webhook\": \"https://hooks.zapier.com/hooks/catch/1234443/234234/\",\n    \"new_message_arrived_webhook\": \"https://hooks.zapier.com/hooks/catch/1234443/293734/\"\n  }\n}",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Account updated"
+          },
+          "400": {
+            "description": "Bad request"
+          }
+        }
+      }
+    },
     "/send-message": {
       "post": {
         "tags": [
-          "Endpoints"
+          "Actions"
         ],
         "operationId": "send-message",
         "summary": "Send a message to any open conversation",
@@ -60,6 +102,29 @@
             "description": "Bad request"
           }
         }
+      }
+    },
+    "/conversation-details": {
+      "get": {
+        "tags": [
+          "Client Endpoints"
+        ],
+        "operationId": "conversation-details",
+        "summary": "Retrieve conversation details, passing a specific agentId and conversationId",
+        "parameters": [
+          {
+            "name": "accountId",
+            "in": "body",
+            "example": "{\n  \"accountId\": \"ABCDE-12345-MNBVC-98765\"\n}",
+            "required": true
+          },
+          {
+            "name": "convId",
+            "in": "body",
+            "example": "{\n  \"convId\": \"123456789\"\n}",
+            "required": true
+          }
+        ]
       }
     }
   },
@@ -95,11 +160,8 @@
 		    "liveperson_accesstokensecret": {
           "type": "string"
         },
-        "new_conversation_webhook": {
-          "type": "string"
-        },
-        "new_file_in_conversation_webhook": {
-          "type": "string"
+        "webhooks": {
+          "$ref": "#/definitions/Webhooks"
         }
       },
       "example": {
@@ -109,8 +171,10 @@
         "liveperson_secret": "1234567890",
         "liveperson_accesstoken": "1234567890",
         "liveperson_accesstokensecret": "1234567890",
-        "new_conversation_webhook": "https://hooks.zapier.com/hooks/catch/1646904/73834/",
-        "new_file_in_conversation_webhook": "https://hooks.zapier.com/hooks/catch/1234443/234234/"
+        "webhooks": {
+          "new_conversation_webhook": "https://hooks.zapier.com/hooks/catch/1646904/73834/",
+          "new_file_in_conversation_webhook": "https://hooks.zapier.com/hooks/catch/1234443/234234/"
+        }
       }
     },
     "User - Authentication with Password": {
@@ -129,19 +193,19 @@
         "liveperson_accountid": {
           "type": "string"
         },
-        "new_conversation_webhook": {
-          "type": "string"
-        },
-        "new_file_in_conversation_webhook": {
-          "type": "string"
+        "webhooks": {
+          "$ref": "#/definitions/Webhooks"
         }
       },
       "example": {
         "username": "John Doe",
         "liveperson_accountid": "1234567890",
         "liveperson_password": "1234567890",
-        "new_conversation_webhook": "https://hooks.zapier.com/hooks/catch/1646904/73834/",
-        "new_file_in_conversation_webhook": "https://hooks.zapier.com/hooks/catch/1234443/234234/"
+        "webhooks": {
+          "new_conversation_webhook": "https://hooks.zapier.com/hooks/catch/1646904/73834/",
+          "new_file_in_conversation_webhook": "https://hooks.zapier.com/hooks/catch/1234443/234234/",
+          "new_message_arrived_webhook": "https://hooks.zapier.com/hooks/catch/1234443/293734/"
+        }
       }
     },
     "Message": {
@@ -185,6 +249,20 @@
       		"contentType": "text/plain",
       		"message": "Hello!"
       	}
+      }
+    },
+    "Webhooks": {
+      "type": "object",
+      "properties": {
+        "new_conversation_webhook": {
+          "type": "string"
+        },
+        "new_file_in_conversation_webhook": {
+          "type": "string"
+        },
+        "new_message_arrived_webhook": {
+          "type": "string"
+        }
       }
     }
   }

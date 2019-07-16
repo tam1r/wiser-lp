@@ -77,9 +77,11 @@ class WiserAgent extends Agent {
   }
 
   updateConf(params) {
-    this.conf({ ...this.conf, ...params });
+    this.conf = {
+      ...this.conf,
+      ...params,
+    };
   }
-
 
   init() {
     this.on('connected', () => {

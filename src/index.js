@@ -50,7 +50,7 @@ function keepAwake() {
   app.use(bodyParser.urlencoded({ extended: true }));
   app.use('/docs', swagger.serve, swagger.setup(docs, docsConfig));
 
-  app.post('/unregister-client', async (req, res) => { // eslint-disable-line
+  app.post('/unregister-client', async (req, res) => {
     const validatedMetadata = await schema.validate(
       req.body,
       schemas.user.endpoints.unregisterClient,
@@ -59,11 +59,19 @@ function keepAwake() {
       return res.status(400).send(error);
     });
 
-    // TODO: remove the agent from the AgentsClusterService
-    // TODO: remove account from the DB
+    const { accountId } = validatedMetadata;
 
-    console.log(validatedMetadata);
-    return res.send('Endpoint in development');
+    signale.info(`Disposng of ${accountId} account`);
+    AgentsClusterService.agents[accountId].dispose();
+    delete AgentsClusterService.agents[accountId];
+
+    try {
+      const response = await db.remmoveClient(connection, accountId);
+      signale.info(`Account ${accountId} removed from the database`);
+      return res.status(200).send(response);
+    } catch (error) {
+      return res.status(500).send(error);
+    }
   });
 
   app.post('/register-client', async (req, res) => {
@@ -113,6 +121,7 @@ function keepAwake() {
 
     const { accountId } = validatedMetadata;
 
+    signale.info(`Disposng of ${accountId} account`);
     AgentsClusterService.agents[accountId].dispose();
 
     try {
@@ -123,6 +132,7 @@ function keepAwake() {
 
     AgentsClusterService.agents[accountId].updateConf(validatedMetadata);
     AgentsClusterService.agents[accountId].init();
+    signale.info(`Reconnecting ${accountId} account`);
 
     return res.status(200).send('Agent udpated successfully');
   });

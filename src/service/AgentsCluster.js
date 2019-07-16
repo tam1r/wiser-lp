@@ -10,6 +10,53 @@ class AgentsCluster {
     this.init();
   }
 
+  async updateAgent(conf) {
+    try {
+      const {
+        accountId,
+        liveperson_appkey,
+        liveperson_secret,
+        liveperson_accesstoken,
+        liveperson_accesstokensecret,
+        webhooks,
+      } = conf;
+
+      const {
+        new_conversation_webhook,
+        new_file_in_conversation_webhook,
+        new_message_arrived_webhook,
+        coordinates_webhook,
+      } = webhooks;
+
+      const agentConf = this.agents[accountId].getConf();
+      const oldWebhooks = this.agents[accountId].getWebhooks();
+
+      const {
+        new_conversation_webhook: prev_new_conversation_webhook,
+        new_file_in_conversation_webhook: prev_new_file_in_conversation_webhook,
+        new_message_arrived_webhook: prev_new_message_arrived_webhook,
+        coordinates_webhook: prev_coordinates_webhook,
+      } = oldWebhooks;
+
+      // TODO: Add the rest of the remaing fields.
+      await promisifyQuery(this.connection, `
+        UPDATE users
+        SET
+          liveperson_appkey = '${liveperson_appkey || agentConf.liveperson_appkey || ''}',
+          liveperson_secret = '${liveperson_secret || agentConf.liveperson_secret || ''}',
+          liveperson_accesstoken = '${liveperson_accesstoken || agentConf.liveperson_accesstoken || ''}',
+          liveperson_accesstokensecret = '${liveperson_accesstokensecret || agentConf.liveperson_accesstokensecret || ''}',
+          new_conversation_webhook = '${new_conversation_webhook || prev_new_conversation_webhook || ''}',
+          new_file_in_conversation_webhook = '${new_file_in_conversation_webhook || prev_new_file_in_conversation_webhook || ''}',
+          new_message_arrived_webhook = '${new_message_arrived_webhook || prev_new_message_arrived_webhook || ''}',
+          coordinates_webhook = '${coordinates_webhook || prev_coordinates_webhook || ''}'
+        WHERE users.liveperson_accountid = '${accountId}'
+      `);
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async getConversationDetails(agentId, convId) {
     return new Promise((resolve, reject) => {
       const agent = this.agents[agentId];

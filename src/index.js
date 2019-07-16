@@ -50,7 +50,7 @@ function keepAwake() {
   app.use(bodyParser.urlencoded({ extended: true }));
   app.use('/docs', swagger.serve, swagger.setup(docs, docsConfig));
 
-  app.post('/unregister-client', async (req, res) => { // eslint-disable-line
+  app.delete('/unregister-client', async (req, res) => {
     const validatedMetadata = await schema.validate(
       req.body,
       schemas.user.endpoints.unregisterClient,
@@ -59,11 +59,22 @@ function keepAwake() {
       return res.status(400).send(error);
     });
 
-    // TODO: remove the agent from the AgentsClusterService
-    // TODO: remove account from the DB
+    const { accountId } = validatedMetadata;
 
-    console.log(validatedMetadata);
-    return res.send('Endpoint in development');
+
+    try {
+      signale.info(`Disposing of ${accountId} account`);
+      const response = await db.removeClient(connection, accountId);
+
+      AgentsClusterService.agents[accountId].dispose();
+      delete AgentsClusterService.agents[accountId];
+
+      signale.info(`Account ${accountId} removed from the database`);
+      return res.status(200).send(response);
+    } catch (error) {
+      console.log(error);
+      return res.status(500).send(error);
+    }
   });
 
   app.post('/register-client', async (req, res) => {
@@ -111,13 +122,23 @@ function keepAwake() {
       return res.status(400).send(error);
     });
 
-    // TODO: remove the agent from the AgentsClusterService
-    // TODO: update values in the DB
-    // TODO: re-initalize the agent's account with recently update account
+    const { accountId } = validatedMetadata;
 
-    console.log(validatedMetadata);
+    signale.info(`Disposng of ${accountId} account`);
+    AgentsClusterService.agents[accountId].dispose();
 
-    return res.send('Endpoint in development');
+    try {
+      await AgentsClusterService.updateAgent(validatedMetadata);
+    } catch (error) {
+      console.log(error);
+      return res.status(500).send('There was an error while trying to update the Agent');
+    }
+
+    AgentsClusterService.agents[accountId].updateConf(validatedMetadata);
+    AgentsClusterService.agents[accountId].init();
+    signale.info(`Reconnecting ${accountId} account`);
+
+    return res.status(200).send('Agent udpated successfully');
   });
 
   app.post('/send-message', async (req, res) => {

@@ -29,12 +29,14 @@ class AgentsCluster {
       } = webhooks;
 
       const agentConf = this.agents[accountId].getConf();
+      const oldWebhooks = this.agents[accountId].getWebhooks();
+
       const {
         new_conversation_webhook: prev_new_conversation_webhook,
         new_file_in_conversation_webhook: prev_new_file_in_conversation_webhook,
         new_message_arrived_webhook: prev_new_message_arrived_webhook,
         coordinates_webhook: prev_coordinates_webhook,
-      } = agentConf.webhooks;
+      } = oldWebhooks;
 
       // TODO: Add the rest of the remaing fields.
       await promisifyQuery(this.connection, `

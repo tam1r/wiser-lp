@@ -130,6 +130,7 @@ function keepAwake() {
     try {
       await AgentsClusterService.updateAgent(validatedMetadata);
     } catch (error) {
+      console.log(error);
       return res.status(500).send('There was an error while trying to update the Agent');
     }
 

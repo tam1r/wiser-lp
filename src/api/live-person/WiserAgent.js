@@ -76,6 +76,10 @@ class WiserAgent extends Agent {
     return this.conf;
   }
 
+  getWebhooks() {
+    return this.webhooks;
+  }
+
   updateConf(params) {
     this.conf = {
       ...this.conf,

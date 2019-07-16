@@ -111,13 +111,20 @@ function keepAwake() {
       return res.status(400).send(error);
     });
 
-    // TODO: remove the agent from the AgentsClusterService
-    // TODO: update values in the DB
-    // TODO: re-initalize the agent's account with recently update account
+    const { accountId } = validatedMetadata;
 
-    console.log(validatedMetadata);
+    AgentsClusterService.agents[accountId].dispose();
 
-    return res.send('Endpoint in development');
+    try {
+      await AgentsClusterService.updateAgent(validatedMetadata);
+    } catch (error) {
+      return res.status(500).send('There was an error while trying to update the Agent');
+    }
+
+    AgentsClusterService.agents[accountId].updateConf(validatedMetadata);
+    AgentsClusterService.agents[accountId].init();
+
+    return res.status(200).send('Agent udpated successfully');
   });
 
   app.post('/send-message', async (req, res) => {

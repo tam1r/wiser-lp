@@ -72,6 +72,15 @@ class WiserAgent extends Agent {
     });
   }
 
+  getConf() {
+    return this.conf;
+  }
+
+  updateConf(params) {
+    this.conf({ ...this.conf, ...params });
+  }
+
+
   init() {
     this.on('connected', () => {
       this.connecting = false;

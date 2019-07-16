@@ -10,6 +10,33 @@ class AgentsCluster {
     this.init();
   }
 
+  async updateAgent(conf) {
+    try {
+      const {
+        accountId,
+        liveperson_appkey,
+        liveperson_secret,
+        liveperson_accesstoken,
+        liveperson_accesstokensecret,
+      } = conf;
+
+      const agentConf = this.agents[accountId].getConf();
+
+      // TODO: Add the rest of the remaing fields.
+      await promisifyQuery(this.connection, `
+        UPDATE users
+        WHERE id = ${accountId}
+        SET
+          liveperson_appkey = '${liveperson_appkey || agentConf.liveperson_appkey}',
+          liveperson_secret = '${liveperson_secret || agentConf.liveperson_secret}',
+          liveperson_accesstoken = '${liveperson_accesstoken || agentConf.liveperson_accesstoken}',
+          liveperson_accesstokensecret = '${liveperson_accesstokensecret || agentConf.liveperson_accesstokensecret}'
+      `);
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async getConversationDetails(agentId, convId) {
     return new Promise((resolve, reject) => {
       const agent = this.agents[agentId];

@@ -50,7 +50,7 @@ function keepAwake() {
   app.use(bodyParser.urlencoded({ extended: true }));
   app.use('/docs', swagger.serve, swagger.setup(docs, docsConfig));
 
-  app.post('/unregister-client', async (req, res) => {
+  app.delete('/unregister-client', async (req, res) => {
     const validatedMetadata = await schema.validate(
       req.body,
       schemas.user.endpoints.unregisterClient,
@@ -61,15 +61,18 @@ function keepAwake() {
 
     const { accountId } = validatedMetadata;
 
-    signale.info(`Disposng of ${accountId} account`);
-    AgentsClusterService.agents[accountId].dispose();
-    delete AgentsClusterService.agents[accountId];
 
     try {
-      const response = await db.remmoveClient(connection, accountId);
+      signale.info(`Disposing of ${accountId} account`);
+      const response = await db.removeClient(connection, accountId);
+
+      AgentsClusterService.agents[accountId].dispose();
+      delete AgentsClusterService.agents[accountId];
+
       signale.info(`Account ${accountId} removed from the database`);
       return res.status(200).send(response);
     } catch (error) {
+      console.log(error);
       return res.status(500).send(error);
     }
   });

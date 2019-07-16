@@ -29,20 +29,26 @@ class AgentsCluster {
       } = webhooks;
 
       const agentConf = this.agents[accountId].getConf();
+      const {
+        new_conversation_webhook: prev_new_conversation_webhook,
+        new_file_in_conversation_webhook: prev_new_file_in_conversation_webhook,
+        new_message_arrived_webhook: prev_new_message_arrived_webhook,
+        coordinates_webhook: prev_coordinates_webhook,
+      } = agentConf.webhooks;
 
       // TODO: Add the rest of the remaing fields.
       await promisifyQuery(this.connection, `
         UPDATE users
-        WHERE liveperson_accountid = ${accountId}
         SET
-          liveperson_appkey = '${liveperson_appkey || agentConf.liveperson_appkey}',
-          liveperson_secret = '${liveperson_secret || agentConf.liveperson_secret}',
-          liveperson_accesstoken = '${liveperson_accesstoken || agentConf.liveperson_accesstoken}',
-          liveperson_accesstokensecret = '${liveperson_accesstokensecret || agentConf.liveperson_accesstokensecret}',
-          new_conversation_webhook = '${new_conversation_webhook || agentConf.new_conversation_webhook}',
-          new_file_in_conversation_webhook = '${new_file_in_conversation_webhook || agentConf.new_file_in_conversation_webhook}',
-          new_message_arrived_webhook = '${new_message_arrived_webhook || agentConf.new_message_arrived_webhook}',
-          coordinates_webhook = '${coordinates_webhook || agentConf.coordinates_webhook}'
+          liveperson_appkey = '${liveperson_appkey || agentConf.liveperson_appkey || ''}',
+          liveperson_secret = '${liveperson_secret || agentConf.liveperson_secret || ''}',
+          liveperson_accesstoken = '${liveperson_accesstoken || agentConf.liveperson_accesstoken || ''}',
+          liveperson_accesstokensecret = '${liveperson_accesstokensecret || agentConf.liveperson_accesstokensecret || ''}',
+          new_conversation_webhook = '${new_conversation_webhook || prev_new_conversation_webhook || ''}',
+          new_file_in_conversation_webhook = '${new_file_in_conversation_webhook || prev_new_file_in_conversation_webhook || ''}',
+          new_message_arrived_webhook = '${new_message_arrived_webhook || prev_new_message_arrived_webhook || ''}',
+          coordinates_webhook = '${coordinates_webhook || prev_coordinates_webhook || ''}'
+        WHERE users.liveperson_accountid = '${accountId}'
       `);
     } catch (error) {
       throw error;

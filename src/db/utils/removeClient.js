@@ -1,7 +1,7 @@
 const promisifyQuery = require('./promisifyQuery');
 
 async function removeClient(connection, accountId) {
-  const query = `DELETE FROM users WHERE liveperson_accountid = ${accountId}`;
+  const query = `DELETE FROM users WHERE users.liveperson_accountid = '${accountId}'`;
 
   console.log(query);
 

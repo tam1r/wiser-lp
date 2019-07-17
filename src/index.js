@@ -33,8 +33,8 @@ let connection;
 
 function keepAwake() {
   setInterval(() => {
-    http.get('http://lpstaging.herokuapp.com//');
-  }, 300000);
+    http.get('http://lpstaging.herokuapp.com/');
+  }, 100000);
 }
 
 (async () => {

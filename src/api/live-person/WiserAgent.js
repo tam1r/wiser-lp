@@ -140,9 +140,13 @@ class WiserAgent extends Agent {
     // Notification on changes in the open consversation list
     this.on('cqm.ExConversationChangeNotification', (notificationBody) => {
       notificationBody.changes.forEach(async (change) => {
-        const { convId, conversationDetails, lastContentEventNotification } = change.result;
+        const {
+          convId,
+          // conversationDetails,
+          lastContentEventNotification,
+        } = change.result;
         const { originatorMetadata } = lastContentEventNotification;
-        const { startTs } = conversationDetails;
+        // const { startTs } = conversationDetails;
         let isFirstMessage = false;
 
         if (originatorMetadata.id === this.agentId) {
@@ -264,7 +268,7 @@ class WiserAgent extends Agent {
         if (
           change.type === 'UPSERT'
           && isFirstMessage
-          && Utils.isConversationRecentlyCreated(startTs)
+          // && Utils.isConversationRecentlyCreated(startTs)
         ) {
           /*
             [WEBHOOK_TRIGGER]

@@ -101,7 +101,10 @@ class WiserAgent extends Agent {
       // make the agent visibity to "online"
       this.setAgentState({ availability: 'ONLINE' });
 
-      this.subscribeExConversations({ convState: ['OPEN'] }, (error, response) => {
+      this.subscribeExConversations({
+        convState: ['OPEN'],
+        agentIds: [this.agentId],
+      }, (error, response) => {
         if (error) {
           this.signale.error(error);
           return;
@@ -260,7 +263,7 @@ class WiserAgent extends Agent {
 
         if (
           change.type === 'UPSERT'
-          && !this.openConversations[convId]
+          && isFirstMessage
           && Utils.isConversationRecentlyCreated(startTs)
         ) {
           /*

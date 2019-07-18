@@ -160,7 +160,7 @@ class WiserAgent extends Agent {
 
         const { messageId } = messageDetails;
 
-        signale.info(
+        this.signale.info(
           log.debug('MESSAGE DETAILS'),
           log.obj(messageDetails),
         );
@@ -225,7 +225,7 @@ class WiserAgent extends Agent {
           });
 
           this.signale.success(
-            log.success(`successfully triggered webhook: ${this.webhooks.coordinates_webhook}\n`),
+            log.success(`successfully triggered 'coordinates_webhook' webhook: ${this.webhooks.coordinates_webhook}\n`),
           );
         }
 
@@ -278,11 +278,11 @@ class WiserAgent extends Agent {
           if (this.webhooks.new_conversation_webhook) {
             await triggerWebhook(this.webhooks.new_conversation_webhook, parsedConversationDetails);
 
-            log.success(
-              `successfully triggered webhook: ${this.webhooks.new_conversation_webhook}
-              accountId: ${this.conf.accountId}
-              convId: ${convId}
-              convDetails: ${log.obj(parsedConversationDetails)}`,
+            this.signale.success(
+              log.success(`successfully triggered 'new_conversation_webhook' webhook: ${this.webhooks.new_conversation_webhook}\n`),
+              log.info(`\t\t\taccountId: ${this.conf.accountId}\n`),
+              log.info(`\t\t\tconvId: ${convId}\n`),
+              log.info(`\t\t\tconvDetails: ${log.obj(parsedConversationDetails)}\n`),
             );
           }
 

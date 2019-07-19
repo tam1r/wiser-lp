@@ -72,6 +72,21 @@ class WiserAgent extends Agent {
     });
   }
 
+  getConf() {
+    return this.conf;
+  }
+
+  getWebhooks() {
+    return this.webhooks;
+  }
+
+  updateConf(params) {
+    this.conf = {
+      ...this.conf,
+      ...params,
+    };
+  }
+
   init() {
     this.on('connected', () => {
       this.connecting = false;
@@ -86,7 +101,10 @@ class WiserAgent extends Agent {
       // make the agent visibity to "online"
       this.setAgentState({ availability: 'ONLINE' });
 
-      this.subscribeExConversations({ convState: ['OPEN'] }, (error, response) => {
+      this.subscribeExConversations({
+        convState: ['OPEN'],
+        agentIds: [this.agentId],
+      }, (error, response) => {
         if (error) {
           this.signale.error(error);
           return;
@@ -122,9 +140,13 @@ class WiserAgent extends Agent {
     // Notification on changes in the open consversation list
     this.on('cqm.ExConversationChangeNotification', (notificationBody) => {
       notificationBody.changes.forEach(async (change) => {
-        const { convId, conversationDetails, lastContentEventNotification } = change.result;
+        const {
+          convId,
+          // conversationDetails,
+          lastContentEventNotification,
+        } = change.result;
         const { originatorMetadata } = lastContentEventNotification;
-        const { startTs } = conversationDetails;
+        // const { startTs } = conversationDetails;
         let isFirstMessage = false;
 
         if (originatorMetadata.id === this.agentId) {
@@ -138,7 +160,7 @@ class WiserAgent extends Agent {
 
         const { messageId } = messageDetails;
 
-        signale.info(
+        this.signale.info(
           log.debug('MESSAGE DETAILS'),
           log.obj(messageDetails),
         );
@@ -203,7 +225,7 @@ class WiserAgent extends Agent {
           });
 
           this.signale.success(
-            log.success(`successfully triggered webhook: ${this.webhooks.coordinates_webhook}\n`),
+            log.success(`successfully triggered 'coordinates_webhook' webhook: ${this.webhooks.coordinates_webhook}\n`),
           );
         }
 
@@ -245,8 +267,8 @@ class WiserAgent extends Agent {
 
         if (
           change.type === 'UPSERT'
-          && !this.openConversations[convId]
-          && Utils.isConversationRecentlyCreated(startTs)
+          && isFirstMessage
+          // && Utils.isConversationRecentlyCreated(startTs)
         ) {
           /*
             [WEBHOOK_TRIGGER]
@@ -256,11 +278,11 @@ class WiserAgent extends Agent {
           if (this.webhooks.new_conversation_webhook) {
             await triggerWebhook(this.webhooks.new_conversation_webhook, parsedConversationDetails);
 
-            log.success(
-              `successfully triggered webhook: ${this.webhooks.new_conversation_webhook}
-              accountId: ${this.conf.accountId}
-              convId: ${convId}
-              convDetails: ${log.obj(parsedConversationDetails)}`,
+            this.signale.success(
+              log.success(`successfully triggered 'new_conversation_webhook' webhook: ${this.webhooks.new_conversation_webhook}\n`),
+              log.info(`\t\t\taccountId: ${this.conf.accountId}\n`),
+              log.info(`\t\t\tconvId: ${convId}\n`),
+              log.info(`\t\t\tconvDetails: ${log.obj(parsedConversationDetails)}\n`),
             );
           }
 

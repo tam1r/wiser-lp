@@ -63,7 +63,7 @@
           {
             "name": "User",
             "in": "body",
-            "example": "{\n  \"accountId\": \"ABCDE-12345-MNBVC-98765\",\n  \"webhooks\": {\n    \"new_conversation_webhook\": \"https://hooks.zapier.com/hooks/catch/1646904/73834/\",\n    \"new_file_in_conversation_webhook\": \"https://hooks.zapier.com/hooks/catch/1234443/234234/\",\n    \"new_message_arrived_webhook\": \"https://hooks.zapier.com/hooks/catch/1234443/293734/\"\n  }\n}",
+            "example": "{\n  \"accountId\": \"ABCDE-12345-MNBVC-98765\",\n  \"webhooks\": {\n    \"new_conversation_webhook\": \"https://hooks.zapier.com/hooks/catch/1646904/73834/\",\n    \"new_file_in_conversation_webhook\": \"https://hooks.zapier.com/hooks/catch/1234443/234234/\",\n    \"new_message_arrived_webhook\": \"https://hooks.zapier.com/hooks/catch/1234443/293734/\",\n    \"coordinates_webhook\": \"https://hooks.zapier.com/hooks/catch/123123443/293734/\"\n  }\n}",
             "required": true
           }
         ],

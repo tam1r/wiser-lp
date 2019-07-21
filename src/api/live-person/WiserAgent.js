@@ -1,6 +1,8 @@
 const signale = require('signale');
 const { Agent } = require('node-agent-sdk');
 const Sentry = require('@sentry/node');
+const axios = require('axios');
+
 const { log, triggerWebhook } = require('../../utils');
 const Utils = require('./utils');
 
@@ -17,6 +19,7 @@ class WiserAgent extends Agent {
     this.consumerId = undefined;
     this.openConversations = {};
     this.signale = signale;
+    this.lpTimezone = null;
     this.init();
   }
 
@@ -72,6 +75,46 @@ class WiserAgent extends Agent {
     });
   }
 
+  async getTimezonePrefix() {
+    const domains = await this.getDomains();
+    const [botURL] = domains.filter(({ baseURI }) => baseURI.includes('le.liveperson.net'));
+    const prefix = botURL.baseURI.substring(0, 2);
+
+    /*
+      reference: https://knowledge.liveperson.com/data-reporting-report-builder-report-builder-overview.html
+      Z1 = Virginia, North America. The time zone for the Virginia farm is EST.
+      Z2 = UK. The time zone for the UK farm is GMT (or GMT+1 during Daylight Saving Time).
+      Z3 = Sydney, Australia. The time zone for the Sydney farm is AEST.
+    */
+
+    switch (prefix) {
+      case 'z1':
+        this.lpTimezone = 'America/Virgin';
+        break;
+
+      case 'z2':
+        this.lpTimezone = 'Europe/London';
+        break;
+
+      case 'z3':
+        this.lpTimezone = 'Australia/Sydney';
+        break;
+
+      default:
+        this.lpTimezone = null;
+        break;
+    }
+  }
+
+  async getDomains() {
+    const { conf: credentials } = this;
+    const { accountId } = credentials;
+    const URL = `https://lo.agentvep.liveperson.net/api/account/${accountId}/login?v=1.3`;
+
+    const { data } = await axios.post(URL, credentials);
+    return data.csdsCollectionResponse.baseURIs;
+  }
+
   getConf() {
     return this.conf;
   }
@@ -88,6 +131,8 @@ class WiserAgent extends Agent {
   }
 
   init() {
+    this.getTimezonePrefix();
+
     this.on('connected', () => {
       this.connecting = false;
       if (this._retryConnection) clearTimeout(this._retryConnection);
@@ -142,15 +187,15 @@ class WiserAgent extends Agent {
       notificationBody.changes.forEach(async (change) => {
         const {
           convId,
-          // conversationDetails,
+          conversationDetails,
           lastContentEventNotification,
         } = change.result;
         const { originatorMetadata } = lastContentEventNotification;
-        // const { startTs } = conversationDetails;
+        const { startTs } = conversationDetails;
         let isFirstMessage = false;
 
         if (originatorMetadata.id === this.agentId) {
-          console.log('\n\nSKIPPED\n\n');
+          console.log('\nSKIPPED\n');
           return; // ignore messages sent by the agent
         }
 
@@ -268,7 +313,7 @@ class WiserAgent extends Agent {
         if (
           change.type === 'UPSERT'
           && isFirstMessage
-          // && Utils.isConversationRecentlyCreated(startTs)
+          && Utils.isConversationRecentlyCreated(startTs, this.lpTimezone)
         ) {
           /*
             [WEBHOOK_TRIGGER]

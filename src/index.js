@@ -150,6 +150,8 @@ function keepAwake() {
         return res.status(400).send(error);
       });
 
+    // validate the credentials are right
+
     const { liveperson_accountid: accountId } = validatedCredentials;
 
     const validatedMessage = await schema.validate(message, schemas.user.actions.sendMessage)

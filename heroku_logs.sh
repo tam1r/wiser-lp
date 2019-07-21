@@ -1,0 +1,1 @@
+heroku logs --app liveperson-zapier --tail

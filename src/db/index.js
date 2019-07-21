@@ -3,6 +3,7 @@ const {
   connect,
   promisifyQuery,
   addClient,
+  removeClient,
   handleDisconnect,
   keepAlive,
 } = require('./utils');
@@ -12,6 +13,7 @@ module.exports = {
   connect,
   promisifyQuery,
   addClient,
+  removeClient,
   handleDisconnect,
   keepAlive,
 };

@@ -2,7 +2,7 @@ const chalk = require('chalk');
 
 const obj = (object) => {
   if (typeof object === 'object') {
-    return chalk.gray(JSON.stringify(object, null, 2));
+    return chalk.white(JSON.stringify(object, null, 2));
   }
 
   return object;
@@ -14,6 +14,7 @@ const debug = msg => chalk.cyan(msg);
 const warning = msg => chalk.bold.yellow(msg);
 const error = msg => chalk.bold.red(msg);
 const gray = msg => chalk.gray(msg);
+const white = msg => chalk.white(msg);
 
 module.exports = {
   info,
@@ -22,5 +23,6 @@ module.exports = {
   debug,
   error,
   gray,
+  white,
   obj,
 };

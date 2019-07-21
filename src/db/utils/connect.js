@@ -23,8 +23,7 @@ function connect() {
     await connection.connect((err) => {
       if (err) {
         const error = new Error('Error connecting to database');
-        // signale.error(error);
-        console.log('CHIMBO');
+        signale.error(error);
         reject(error);
       } else {
         signale.success(

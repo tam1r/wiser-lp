@@ -70,7 +70,7 @@ function keepAwake() {
       delete AgentsClusterService.agents[accountId];
 
       signale.info(`Account ${accountId} removed from the database`);
-      return res.status(200).send(response);
+      return res.status(200).send({ accountId, ...response });
     } catch (error) {
       console.log(error);
       return res.status(500).send(error);
@@ -110,7 +110,7 @@ function keepAwake() {
       log.obj(credentials),
     );
 
-    return res.status(200).send('Register success');
+    return res.status(200).send({ message: 'Register success', accountId });
   });
 
   app.put('/update-metadata', async (req, res) => {
@@ -138,7 +138,7 @@ function keepAwake() {
     AgentsClusterService.agents[accountId].init();
     signale.info(`Reconnecting ${accountId} account`);
 
-    return res.status(200).send('Agent udpated successfully');
+    return res.status(200).send({ mesage: 'Agent udpated successfully', accountId });
   });
 
   app.post('/send-message', async (req, res) => {
@@ -162,7 +162,7 @@ function keepAwake() {
 
     const response = await AgentsClusterService.agents[accountId].sendMessage(validatedMessage);
 
-    return res.status(response.code).send(response.message);
+    return res.status(response.code).send({ ...response.message, accountId });
   });
 
   app.get('/conversation-details', async (req, res) => {
@@ -185,7 +185,7 @@ function keepAwake() {
         convId,
       );
 
-      return res.status(200).send(conversationDetails);
+      return res.status(200).send({ ...conversationDetails, accountId });
     } catch (error) {
       console.log(error);
       return res.status(400).send(error);

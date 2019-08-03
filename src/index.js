@@ -1,13 +1,14 @@
 require('dotenv').config();
 
+const formidableMiddleware = require('express-formidable');
 const bodyParser = require('body-parser');
 const swagger = require('swagger-ui-express');
-const http = require('http');
 const Sentry = require('@sentry/node');
 const express = require('express');
 const signale = require('signale');
 const morgan = require('morgan');
 const schema = require('schm');
+const http = require('http');
 const docs = require('./docs/swagger.json');
 const docsConfig = require('./docs/config');
 
@@ -18,7 +19,7 @@ const { handleDisconnect, keepAlive } = require('./db/utils');
 const WiserAgent = require('./api/live-person/WiserAgent');
 const AgentsCluster = require('./service/AgentsCluster.js');
 const schemas = require('./schemas');
-const { log } = require('./utils');
+const { log, isEmpty } = require('./utils');
 
 signale.config({
   displayFilename: true,
@@ -48,11 +49,20 @@ function keepAwake() {
   app.use(morgan('tiny'));
   app.use(bodyParser.json());
   app.use(bodyParser.urlencoded({ extended: true }));
+  app.use(formidableMiddleware());
   app.use('/docs', swagger.serve, swagger.setup(docs, docsConfig));
 
   app.delete('/unregister-client', async (req, res) => {
+    let params;
+
+    if (isEmpty(req.body)) {
+      params = req.fields;
+    } else {
+      params = req.body;
+    }
+
     const validatedMetadata = await schema.validate(
-      req.body,
+      params,
       schemas.user.endpoints.unregisterClient,
     ).catch((error) => {
       signale.fatal(error);
@@ -61,31 +71,44 @@ function keepAwake() {
 
     const { accountId } = validatedMetadata;
 
-
     try {
       signale.info(`Disposing of ${accountId} account`);
-      const response = await db.removeClient(connection, accountId);
+      await db.removeClient(connection, accountId);
 
       AgentsClusterService.agents[accountId].dispose();
       delete AgentsClusterService.agents[accountId];
 
       signale.info(`Account ${accountId} removed from the database`);
+
       return res
         .contentType('application/json')
         .status(200)
-        .send({ accountId, ...response });
+        .send({
+          accountId,
+          msg: `Successfully removed account ${accountId}`,
+        });
     } catch (error) {
-      console.log(error);
+      signale.fatal(error);
       return res.status(500).send(error);
     }
   });
 
   app.post('/register-client', async (req, res) => {
-    const validatedCredentials = await schema.validate(req.body, schemas.user.model)
-      .catch((error) => {
-        signale.fatal(error);
-        return res.status(400).send(error);
-      });
+    let params;
+
+    if (isEmpty(req.body)) {
+      params = req.fields;
+    } else {
+      params = req.body;
+    }
+
+    const validatedCredentials = await schema.validate(
+      params,
+      schemas.user.model,
+    ).catch((error) => {
+      signale.fatal(error);
+      return res.status(400).send(error);
+    });
 
     // TODO: check if user with these credentials exist
 
@@ -120,8 +143,16 @@ function keepAwake() {
   });
 
   app.put('/update-metadata', async (req, res) => {
+    let params;
+
+    if (isEmpty(req.body)) {
+      params = req.fields;
+    } else {
+      params = req.body;
+    }
+
     const validatedMetadata = await schema.validate(
-      req.body,
+      params,
       schemas.user.endpoints.updateMetadata,
     ).catch((error) => {
       signale.fatal(error);
@@ -142,16 +173,30 @@ function keepAwake() {
 
     AgentsClusterService.agents[accountId].updateConf(validatedMetadata);
     AgentsClusterService.agents[accountId].init();
+    const consumerId = AgentsClusterService.agents[accountId].getConsumerId();
+
     signale.info(`Reconnecting ${accountId} account`);
 
     return res
       .contentType('application/json')
       .status(200)
-      .send({ mesage: 'Agent udpated successfully', accountId });
+      .send({
+        accountId,
+        consumerId,
+        mesage: 'Agent udpated successfully',
+      });
   });
 
   app.post('/send-message', async (req, res) => {
-    const { credentials, message } = req.body;
+    let params;
+
+    if (isEmpty(req.body)) {
+      params = req.fields;
+    } else {
+      params = req.body;
+    }
+
+    const { credentials, message } = params;
 
     const validatedCredentials = await schema.validate(credentials, schemas.user.model)
       .catch((error) => {
@@ -170,13 +215,28 @@ function keepAwake() {
       });
 
     const response = await AgentsClusterService.agents[accountId].sendMessage(validatedMessage);
+    const consumerId = AgentsClusterService.agents[accountId].getConsumerId();
 
-    return res.status(response.code).send({ ...response.message, accountId });
+    return res
+      .status(response.code)
+      .send({
+        accountId,
+        consumerId,
+        ...response.message,
+      });
   });
 
   app.get('/conversation-details', async (req, res) => {
+    let params;
+
+    if (isEmpty(req.body)) {
+      params = req.fields;
+    } else {
+      params = req.body;
+    }
+
     const validatedMetadata = await schema.validate(
-      req.body,
+      params,
       schemas.user.endpoints.getConversationDetails,
     ).catch((error) => {
       signale.fatal(error);
@@ -193,14 +253,22 @@ function keepAwake() {
         accountId,
         convId,
       );
+      const consumerId = AgentsClusterService.agents[accountId].getConsumerId();
 
       return res
         .contentType('application/json')
         .status(200)
-        .send({ ...conversationDetails, accountId });
+        .send({
+          accountId,
+          consumerId,
+          ...conversationDetails,
+        });
     } catch (error) {
-      console.log(error);
-      return res.status(400).send(error);
+      signale.fatal(error);
+      return res.status(400).send({
+        error,
+        msg: `There is no existing open conversation with id: ${convId}`,
+      });
     }
   });
 

@@ -115,6 +115,10 @@ class WiserAgent extends Agent {
     return data.csdsCollectionResponse.baseURIs;
   }
 
+  getConsumerId() {
+    return this.consumerId;
+  }
+
   getConf() {
     return this.conf;
   }

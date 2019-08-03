@@ -20,6 +20,7 @@ class WiserAgent extends Agent {
     this.openConversations = {};
     this.signale = signale;
     this.lpTimezone = null;
+    this.domains = [];
     this.init();
   }
 
@@ -106,13 +107,23 @@ class WiserAgent extends Agent {
     }
   }
 
-  async getDomains() {
+  getDomains() {
+    return this.domains;
+  }
+
+  async setDomains() {
+    this.signale.info('Retrieving account domains');
+
     const { conf: credentials } = this;
     const { accountId } = credentials;
     const URL = `https://lo.agentvep.liveperson.net/api/account/${accountId}/login?v=1.3`;
 
     const { data } = await axios.post(URL, credentials);
-    return data.csdsCollectionResponse.baseURIs;
+    this.domains = data.csdsCollectionResponse.baseURIs;
+
+    this.signale.success(
+      log.success('Successfully retrieved domains'),
+    );
   }
 
   getConsumerId() {
@@ -134,21 +145,25 @@ class WiserAgent extends Agent {
     };
   }
 
-  init() {
+  async init() {
+    await this.setDomains();
     this.getTimezonePrefix();
 
     this.on('connected', () => {
       this.connecting = false;
-      if (this._retryConnection) clearTimeout(this._retryConnection);
+      const { accountId } = this.conf;
+
+      if (this._retryConnection) {
+        clearTimeout(this._retryConnection);
+      }
 
       this.signale.success(
-        log.success(`Successfully connected agent with accountId: ${this.conf.accountId}`),
+        log.success(`Successfully connected agent with accountId: ${accountId}`),
       );
 
-      this.signale = this.signale.scope(this.conf.accountId);
+      this.signale = this.signale.scope(accountId);
 
-      // make the agent visibity to "online"
-      this.setAgentState({ availability: 'ONLINE' });
+      this.setAgentState({ availability: 'ONLINE' }); // make the agent visibity to "online"
 
       this.subscribeExConversations({
         convState: ['OPEN'],
@@ -162,7 +177,7 @@ class WiserAgent extends Agent {
         this.signale.success(
           log.success('Successfully subscribed to new conversations\n'),
           log.info(`\t\t\t\tsubscriptionId: ${JSON.stringify(response.subscriptionId)}\n`),
-          log.info(`\t\t\t\taccountId: ${this.conf.accountId}`),
+          log.info(`\t\t\t\taccountId: ${accountId}`),
         );
       });
 
@@ -194,13 +209,14 @@ class WiserAgent extends Agent {
           conversationDetails,
           lastContentEventNotification,
         } = change.result;
+        const { accountId } = this.conf;
         const { originatorMetadata } = lastContentEventNotification;
         const { startTs } = conversationDetails;
         let isFirstMessage = false;
 
-        if (originatorMetadata.id === this.agentId) {
-          console.log('\nSKIPPED\n');
-          return; // ignore messages sent by the agent
+        if (originatorMetadata.id === this.agentId) { // ignore messages sent by the agent
+          this.signale.info('SKIPPED message sent by self');
+          return;
         }
 
         const messageDetails = await Utils.extractMessageDetails(change, this.signale);
@@ -242,7 +258,7 @@ class WiserAgent extends Agent {
           this.signale.success(
             log.success(`successfully triggered 'new_message_arrived' webhook: ${this.webhooks.new_message_arrived_webhook}\n`),
             log.info(`\t\t\tconvId: ${convId}\n`),
-            log.info(`\t\t\taccountId: ${this.conf.accountId}\n`),
+            log.info(`\t\t\taccountId: ${accountId}\n`),
             log.info(`\t\t\tconvDetails: ${log.obj(parsedConversationDetails)}\n`),
           );
         }
@@ -302,7 +318,7 @@ class WiserAgent extends Agent {
             this.signale.success(
               log.success(`successfully triggered 'new_file_in_conversation' webhook: ${this.webhooks.new_file_in_conversation_webhook}\n`),
               log.info(`\t\t\tconvId: ${convId}\n`),
-              log.info(`\t\t\taccountId: ${this.conf.accountId}\n`),
+              log.info(`\t\t\taccountId: ${accountId}\n`),
               log.info(`\t\t\tconvDetails: ${log.obj(parsedConversationDetails)}`),
             );
           }
@@ -329,7 +345,7 @@ class WiserAgent extends Agent {
 
             this.signale.success(
               log.success(`successfully triggered 'new_conversation_webhook' webhook: ${this.webhooks.new_conversation_webhook}\n`),
-              log.info(`\t\t\taccountId: ${this.conf.accountId}\n`),
+              log.info(`\t\t\taccountId: ${accountId}\n`),
               log.info(`\t\t\tconvId: ${convId}\n`),
               log.info(`\t\t\tconvDetails: ${log.obj(parsedConversationDetails)}\n`),
             );
@@ -352,8 +368,7 @@ class WiserAgent extends Agent {
           this.getUserProfile(this.consumerId, (e, profileResp) => { // eslint-disable-line
             this.signale.info('consumer id changed');
           });
-        } else if (change.type === 'DELETE') {
-          // conversation was closed or transferred
+        } else if (change.type === 'DELETE') { // conversation was closed or transferred
           delete this.openConversations[convId];
         } else {
           // something else happened
@@ -410,47 +425,3 @@ class WiserAgent extends Agent {
 }
 
 module.exports = WiserAgent;
-
-/*
-
-Reference Code:
-
-// Echo every unread consumer message and mark it as read
-// this.on('ms.MessagingEventNotification', (body) => {
-//   const respond = {};
-//   body.changes.forEach((c) => {
-//     // In the current version MessagingEventNotification
-//     // are recived also without subscription
-//     // Will be fixed in the next api version.
-//     // So we have to check if this notification is handled by us.
-//     if (openConversations[c.dialogId]) {
-//       // add to respond list all content event not by me
-//       if (c.event.type === 'ContentEvent' && c.originatorId !== this.agentId) {
-//         respond[`${body.dialogId}-${c.sequence}`] = {
-//           dialogId: body.dialogId,
-//           sequence: c.sequence,
-//           message: c.event.message,
-//         };
-//       }
-//       // remove from respond list all the messages that were already read
-//       if (c.event.type === 'AcceptStatusEvent' && c.originatorId === this.agentId) {
-//         c.event.sequenceList.forEach((seq) => {
-//           delete respond[`${body.dialogId}-${seq}`];
-//         });
-//       }
-//     }
-//   });
-//
-//   // publish read, and echo
-//   Object.keys(respond).forEach((key) => {
-//     const contentEvent = respond[key];
-//     this.publishEvent({
-//       dialogId: contentEvent.dialogId,
-//       event: {
-//         type: 'AcceptStatusEvent', status: 'READ', sequenceList: [contentEvent.sequence] },
-//     });
-//     this.emit(this.CONTENT_NOTIFICATION, contentEvent);
-//   });
-// });
-
-*/

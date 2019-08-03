@@ -4,9 +4,14 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "NODE_ENV=production node src/index.js",
-    "dev": "NODE_ENV=development node src/index.js",
-    "lint": "eslint . --max-warnings=0 && echo 'No linting errors ✔'"
+    "start": "concurrently \"yarn start-backend-prod\" \"yarn start-frontend-prod\"",
+    "dev": "concurrently \"yarn start-backend-dev\" \"yarn start-frontend-dev\"",
+    "start-backend-prod": "NODE_ENV=production node src/index.js",
+    "start-frontend-prod": "cd src/admin-panel && yarn start",
+    "start-backend-dev": "NODE_ENV=development node src/index.js",
+    "start-frontend-dev": "cd src/admin-panel && yarn start",
+    "lint": "eslint . --max-warnings=0 && echo 'No linting errors ✔'",
+    "postinstall": "cd src && cd admin-panel && yarn"
   },
   "repository": {
     "type": "git",
@@ -29,6 +34,8 @@
     "axios": "^0.19.0",
     "body-parser": "^1.18.3",
     "chalk": "^2.4.2",
+    "concurrently": "^4.1.1",
+    "cors": "^2.8.5",
     "dotenv": "^7.0.0",
     "express": "^4.16.4",
     "express-formidable": "^1.2.0",

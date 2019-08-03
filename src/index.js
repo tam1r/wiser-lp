@@ -1,6 +1,6 @@
 require('dotenv').config();
 
-const formidableMiddleware = require('express-formidable');
+const formidable = require('express-formidable');
 const bodyParser = require('body-parser');
 const swagger = require('swagger-ui-express');
 const Sentry = require('@sentry/node');
@@ -9,6 +9,7 @@ const signale = require('signale');
 const morgan = require('morgan');
 const schema = require('schm');
 const http = require('http');
+const cors = require('cors');
 const docs = require('./docs/swagger.json');
 const docsConfig = require('./docs/config');
 
@@ -19,7 +20,7 @@ const { handleDisconnect, keepAlive } = require('./db/utils');
 const WiserAgent = require('./api/live-person/WiserAgent');
 const AgentsCluster = require('./service/AgentsCluster.js');
 const schemas = require('./schemas');
-const { log, isEmpty } = require('./utils');
+const { log } = require('./utils');
 
 signale.config({
   displayFilename: true,
@@ -29,7 +30,7 @@ if (process.env.NODE_ENV === 'production') {
   Sentry.init({ dsn: process.env.SENTRY_DSN });
 }
 
-const PORT = 3000;
+const PORT = 5000;
 let connection;
 
 function keepAwake() {
@@ -38,31 +39,58 @@ function keepAwake() {
   }, 100000);
 }
 
-(async () => {
+async function wiserLP() {
   connection = await db.connect();
   await db.setup(connection);
-
   handleDisconnect(connection);
-  keepAlive(connection);
+
+  if (process.env.NODE_ENV === 'production') {
+    keepAlive(connection);
+  }
+
   const AgentsClusterService = new AgentsCluster(connection);
 
   app.use(morgan('tiny'));
+  app.use(cors());
   app.use(bodyParser.json());
   app.use(bodyParser.urlencoded({ extended: true }));
-  app.use(formidableMiddleware());
   app.use('/docs', swagger.serve, swagger.setup(docs, docsConfig));
 
   app.delete('/unregister-client', async (req, res) => {
-    let params;
-
-    if (isEmpty(req.body)) {
-      params = req.fields;
-    } else {
-      params = req.body;
-    }
-
     const validatedMetadata = await schema.validate(
-      params,
+      req.body,
+      schemas.user.endpoints.unregisterClient,
+    ).catch((error) => {
+      signale.fatal(error);
+      return res.status(400).send(error);
+    });
+
+    const { accountId } = validatedMetadata;
+
+    try {
+      signale.info(`Disposing of ${accountId} account`);
+      await db.removeClient(connection, accountId);
+
+      AgentsClusterService.agents[accountId].dispose();
+      delete AgentsClusterService.agents[accountId];
+
+      signale.info(`Account ${accountId} removed from the database`);
+
+      return res
+        .contentType('application/json')
+        .status(200)
+        .send({
+          accountId,
+          msg: `Successfully removed account ${accountId}`,
+        });
+    } catch (error) {
+      signale.fatal(error);
+      return res.status(500).send(error);
+    }
+  });
+  app.delete('/unregister-client-form', formidable(), async (req, res) => {
+    const validatedMetadata = await schema.validate(
+      req.fields,
       schemas.user.endpoints.unregisterClient,
     ).catch((error) => {
       signale.fatal(error);
@@ -94,16 +122,48 @@ function keepAwake() {
   });
 
   app.post('/register-client', async (req, res) => {
-    let params;
-
-    if (isEmpty(req.body)) {
-      params = req.fields;
-    } else {
-      params = req.body;
-    }
-
     const validatedCredentials = await schema.validate(
-      params,
+      req.body,
+      schemas.user.model,
+    ).catch((error) => {
+      signale.fatal(error);
+      return res.status(400).send(error);
+    });
+
+    // TODO: check if user with these credentials exist
+
+    // Add client to the database
+    db.addClient(connection, validatedCredentials);
+
+    // Init liveperson service for recently created user
+    const accountId = validatedCredentials.liveperson_accountid;
+    const { webhooks } = validatedCredentials;
+
+    const credentials = {
+      accountId,
+      username: validatedCredentials.username,
+      password: validatedCredentials.liveperson_password,
+      appKey: validatedCredentials.liveperson_appkey,
+      secret: validatedCredentials.liveperson_secret,
+      accessToken: validatedCredentials.liveperson_accesstoken,
+      accessTokenSecret: validatedCredentials.liveperson_accesstokensecret,
+    };
+
+    AgentsClusterService.agents[accountId] = new WiserAgent(credentials, webhooks);
+
+    signale.success(
+      log.success('Successfully registered user with credentials:\n'),
+      log.obj(credentials),
+    );
+
+    return res
+      .contentType('application/json')
+      .status(200)
+      .send({ message: 'Register success', accountId });
+  });
+  app.post('/register-client-form', formidable(), async (req, res) => {
+    const validatedCredentials = await schema.validate(
+      req.fields,
       schemas.user.model,
     ).catch((error) => {
       signale.fatal(error);
@@ -143,16 +203,8 @@ function keepAwake() {
   });
 
   app.put('/update-metadata', async (req, res) => {
-    let params;
-
-    if (isEmpty(req.body)) {
-      params = req.fields;
-    } else {
-      params = req.body;
-    }
-
     const validatedMetadata = await schema.validate(
-      params,
+      req.body,
       schemas.user.endpoints.updateMetadata,
     ).catch((error) => {
       signale.fatal(error);
@@ -167,7 +219,43 @@ function keepAwake() {
     try {
       await AgentsClusterService.updateAgent(validatedMetadata);
     } catch (error) {
-      console.log(error);
+      signale.fatal(error);
+      return res.status(500).send('There was an error while trying to update the Agent');
+    }
+
+    AgentsClusterService.agents[accountId].updateConf(validatedMetadata);
+    AgentsClusterService.agents[accountId].init();
+    const consumerId = AgentsClusterService.agents[accountId].getConsumerId();
+
+    signale.info(`Reconnecting ${accountId} account`);
+
+    return res
+      .contentType('application/json')
+      .status(200)
+      .send({
+        accountId,
+        consumerId,
+        mesage: 'Agent udpated successfully',
+      });
+  });
+  app.put('/update-metadata-form', formidable(), async (req, res) => {
+    const validatedMetadata = await schema.validate(
+      req.fields,
+      schemas.user.endpoints.updateMetadata,
+    ).catch((error) => {
+      signale.fatal(error);
+      return res.status(400).send(error);
+    });
+
+    const { accountId } = validatedMetadata;
+
+    signale.info(`Disposng of ${accountId} account`);
+    AgentsClusterService.agents[accountId].dispose();
+
+    try {
+      await AgentsClusterService.updateAgent(validatedMetadata);
+    } catch (error) {
+      signale.fatal(error);
       return res.status(500).send('There was an error while trying to update the Agent');
     }
 
@@ -188,15 +276,37 @@ function keepAwake() {
   });
 
   app.post('/send-message', async (req, res) => {
-    let params;
+    const { credentials, message } = req.body;
 
-    if (isEmpty(req.body)) {
-      params = req.fields;
-    } else {
-      params = req.body;
-    }
+    const validatedCredentials = await schema.validate(credentials, schemas.user.model)
+      .catch((error) => {
+        signale.fatal(error);
+        return res.status(400).send(error);
+      });
 
-    const { credentials, message } = params;
+    // validate the credentials are right
+
+    const { liveperson_accountid: accountId } = validatedCredentials;
+
+    const validatedMessage = await schema.validate(message, schemas.user.actions.sendMessage)
+      .catch((error) => {
+        signale.fatal(error);
+        return res.status(400).send(error);
+      });
+
+    const response = await AgentsClusterService.agents[accountId].sendMessage(validatedMessage);
+    const consumerId = AgentsClusterService.agents[accountId].getConsumerId();
+
+    return res
+      .status(response.code)
+      .send({
+        accountId,
+        consumerId,
+        ...response.message,
+      });
+  });
+  app.post('/send-message-form', formidable(), async (req, res) => {
+    const { credentials, message } = req.fields;
 
     const validatedCredentials = await schema.validate(credentials, schemas.user.model)
       .catch((error) => {
@@ -227,16 +337,45 @@ function keepAwake() {
   });
 
   app.get('/conversation-details', async (req, res) => {
-    let params;
-
-    if (isEmpty(req.body)) {
-      params = req.fields;
-    } else {
-      params = req.body;
-    }
-
     const validatedMetadata = await schema.validate(
-      params,
+      req.body,
+      schemas.user.endpoints.getConversationDetails,
+    ).catch((error) => {
+      signale.fatal(error);
+      return res.status(400).send(error);
+    });
+
+    const {
+      accountId,
+      convId,
+    } = validatedMetadata;
+
+    try {
+      const conversationDetails = await AgentsClusterService.getConversationDetails(
+        accountId,
+        convId,
+      );
+      const consumerId = AgentsClusterService.agents[accountId].getConsumerId();
+
+      return res
+        .contentType('application/json')
+        .status(200)
+        .send({
+          accountId,
+          consumerId,
+          ...conversationDetails,
+        });
+    } catch (error) {
+      signale.fatal(error);
+      return res.status(400).send({
+        error,
+        msg: `There is no existing open conversation with id: ${convId}`,
+      });
+    }
+  });
+  app.get('/conversation-details-form', formidable(), async (req, res) => {
+    const validatedMetadata = await schema.validate(
+      req.fields,
       schemas.user.endpoints.getConversationDetails,
     ).catch((error) => {
       signale.fatal(error);
@@ -272,6 +411,65 @@ function keepAwake() {
     }
   });
 
+  app.get('/domains', async (req, res) => {
+    const { accountId } = req.body;
+
+    if (!accountId) {
+      return res.status(400).send('Missing accountId parameter');
+    }
+
+    try {
+      const domains = AgentsClusterService.agents[accountId].getDomains();
+      const consumerId = AgentsClusterService.agents[accountId].getConsumerId();
+
+      return res
+        .contentType('application/json')
+        .status(200)
+        .send({
+          accountId,
+          consumerId,
+          domains,
+        });
+    } catch (error) {
+      signale.fatal(error);
+      return res
+        .status(500)
+        .send({
+          error,
+          msg: 'Something wrong ocurred',
+        });
+    }
+  });
+  app.get('/domains-form', formidable(), async (req, res) => {
+    const { accountId } = req.fields;
+
+    if (!accountId) {
+      return res.status(400).send('Missing accountId parameter');
+    }
+
+    try {
+      const domains = AgentsClusterService.agents[accountId].getDomains();
+      const consumerId = AgentsClusterService.agents[accountId].getConsumerId();
+
+      return res
+        .contentType('application/json')
+        .status(200)
+        .send({
+          accountId,
+          consumerId,
+          domains,
+        });
+    } catch (error) {
+      signale.fatal(error);
+      return res
+        .status(500)
+        .send({
+          error,
+          msg: 'Something wrong ocurred',
+        });
+    }
+  });
+
   app.get('/', (req, res) => res
     .status(200)
     .send('WiserLP'));
@@ -283,4 +481,6 @@ function keepAwake() {
     );
     keepAwake();
   });
-})();
+}
+
+wiserLP();

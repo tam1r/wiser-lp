@@ -3,7 +3,7 @@ require('dotenv').config();
 const formidable = require('express-formidable');
 const bodyParser = require('body-parser');
 const swagger = require('swagger-ui-express');
-const Sentry = require('@sentry/node');
+const sentry = require('@sentry/node');
 const express = require('express');
 const signale = require('signale');
 const morgan = require('morgan');
@@ -16,7 +16,7 @@ const docsConfig = require('./docs/config');
 const app = express();
 
 const db = require('./db');
-const { handleDisconnect, keepAlive } = require('./db/utils');
+const { handleDisconnect, keepAlive, promisifyQuery } = require('./db/utils');
 const WiserAgent = require('./api/live-person/WiserAgent');
 const AgentsCluster = require('./service/AgentsCluster.js');
 const schemas = require('./schemas');
@@ -27,7 +27,7 @@ signale.config({
 });
 
 if (process.env.NODE_ENV === 'production') {
-  Sentry.init({ dsn: process.env.SENTRY_DSN });
+  sentry.init({ dsn: process.env.SENTRY_DSN });
 }
 
 const PORT = 5000;
@@ -468,6 +468,49 @@ async function wiserLP() {
           msg: 'Something wrong ocurred',
         });
     }
+  });
+
+  app.post('/login', async (req, res) => {
+    const validatedMetadata = await schema.validate(
+      req.body,
+      schemas.user.endpoints.login,
+    ).catch((error) => {
+      signale.fatal(error);
+      return res.status(400).send(error);
+    });
+
+    const { accountId, password } = validatedMetadata;
+
+    const results = await promisifyQuery(
+      connection,
+      'SELECT * FROM users WHERE liveperson_accountid = ? && liveperson_password = ?',
+      [accountId, password],
+    );
+
+    if (results.length > 0) {
+      const {
+        id,
+        liveperson_accountid,
+        liveperson_appkey,
+        liveperson_password,
+        liveperson_secret,
+        liveperson_accesstoken,
+        liveperson_accesstokensecret,
+        ...userData
+      } = results[0];
+
+      return res
+        .status(200)
+        .send({
+          user: userData,
+          msg: 'Login success',
+        });
+    }
+    return res
+      .status(401)
+      .send({
+        msg: 'Invalid credentials',
+      });
   });
 
   app.get('/', (req, res) => res

@@ -169,7 +169,7 @@ async function wiserLP() {
   app.post('/register-client-form', formidable(), async (req, res) => {
     const validatedCredentials = await schema.validate(
       req.fields,
-      schemas.user.model,
+      schemas.user.modelForm,
     ).catch((error) => {
       signale.fatal(error);
       return res.status(400).send(error);
@@ -247,7 +247,7 @@ async function wiserLP() {
   app.put('/update-metadata-form', formidable(), async (req, res) => {
     const validatedMetadata = await schema.validate(
       req.fields,
-      schemas.user.endpoints.updateMetadata,
+      schemas.user.endpoints.updateMetadataForm,
     ).catch((error) => {
       signale.fatal(error);
       return res.status(400).send(error);
@@ -290,7 +290,7 @@ async function wiserLP() {
         return res.status(400).send(error);
       });
 
-    // validate the credentials are right
+    // TODO: validate the credentials are right
 
     const { liveperson_accountid: accountId } = validatedCredentials;
 
@@ -300,46 +300,52 @@ async function wiserLP() {
         return res.status(400).send(error);
       });
 
-    const response = await AgentsClusterService.agents[accountId].sendMessage(validatedMessage);
-    const consumerId = AgentsClusterService.agents[accountId].getConsumerId();
+    try {
+      const response = await AgentsClusterService.agents[accountId].sendMessage(validatedMessage);
+      const consumerId = AgentsClusterService.agents[accountId].getConsumerId();
 
-    return res
-      .status(response.code)
-      .send({
-        accountId,
-        consumerId,
-        ...response.message,
-      });
+      return res
+        .status(response.code)
+        .send({
+          accountId,
+          consumerId,
+          ...response.message,
+        });
+    } catch (error) {
+      return res
+        .status(error.code)
+        .send(error);
+    }
   });
   app.post('/send-message-form', formidable(), async (req, res) => {
-    const { credentials, message } = req.fields;
+    const validatedMetadata = await schema.validate(
+      req.fields,
+      schemas.actions.sendMessageForm,
+    ).catch((error) => {
+      signale.fatal(error);
+      return res.status(400).send(error);
+    });
 
-    const validatedCredentials = await schema.validate(credentials, schemas.user.model)
-      .catch((error) => {
-        signale.fatal(error);
-        return res.status(400).send(error);
-      });
+    // TODO: validate the credentials are right
 
-    // validate the credentials are right
+    const { liveperson_accountid: accountId } = validatedMetadata;
 
-    const { liveperson_accountid: accountId } = validatedCredentials;
+    try {
+      const response = await AgentsClusterService.agents[accountId].sendMessage(validatedMetadata);
+      const consumerId = AgentsClusterService.agents[accountId].getConsumerId();
 
-    const validatedMessage = await schema.validate(message, schemas.user.actions.sendMessage)
-      .catch((error) => {
-        signale.fatal(error);
-        return res.status(400).send(error);
-      });
-
-    const response = await AgentsClusterService.agents[accountId].sendMessage(validatedMessage);
-    const consumerId = AgentsClusterService.agents[accountId].getConsumerId();
-
-    return res
-      .status(response.code)
-      .send({
-        accountId,
-        consumerId,
-        ...response.message,
-      });
+      return res
+        .status(response.code)
+        .send({
+          accountId,
+          consumerId,
+          ...response.message,
+        });
+    } catch (error) {
+      return res
+        .status(error.code)
+        .send(error);
+    }
   });
 
   app.get('/conversation-details', async (req, res) => {

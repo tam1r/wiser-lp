@@ -25,7 +25,7 @@ class WiserAgent extends Agent {
   }
 
   async sendMessage(params) {
-    return new Promise(async (resolve) => {
+    return new Promise(async (resolve, reject) => {
       const { dialogId, contentType, message } = params;
       this.signale.debug(
         'Send message init',
@@ -67,7 +67,7 @@ class WiserAgent extends Agent {
           break;
 
         default:
-          resolve({
+          reject({
             code: 405,
             message: 'Method not supported',
           });

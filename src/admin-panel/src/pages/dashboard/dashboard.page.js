@@ -15,6 +15,7 @@ import { capitalize } from '../../utils';
 
 import Home from './home/home.content.js';
 import Configuration from './configuration/configuration.content.js';
+import Conversations from './conversations/conversations.content.js';
 
 const Dashboard = (props) => {
   const [user] = useState(JSON.parse(localStorage.getItem('user')) || null);
@@ -23,6 +24,7 @@ const Dashboard = (props) => {
   const pages = [
     { page: 'home', content: <Home user={user} /> },
     { page: 'configuration', content: <Configuration user={user} /> },
+    { page: 'conversations', content: <Conversations user={user} /> },
   ];
 
   // useEffect(() => {

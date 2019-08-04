@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Route, Switch } from "react-router-dom";
+import { BrowserRouter, Route, Switch } from 'react-router-dom';
 
 import {
   LogIn,
@@ -14,6 +14,7 @@ function App() {
         <Route exact path="/" component={Dashboard} />
         <Route exact path="/home" component={Dashboard} />
         <Route exact path="/configuration" component={Dashboard} />
+        <Route exact path="/conversations" component={Dashboard} />
         <Route exact path="/login" component={LogIn} />
         <Route component={Error404} />
       </Switch>

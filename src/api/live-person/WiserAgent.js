@@ -26,52 +26,53 @@ class WiserAgent extends Agent {
 
   async sendMessage(params) {
     return new Promise(async (resolve, reject) => {
-      const { dialogId, contentType, message } = params;
-      this.signale.debug(
-        'Send message init',
-        'params: \n',
-        params,
-      );
+      if (params) {
+        const { dialogId, contentType, message } = params;
+        this.signale.debug(
+          'Send message init',
+          'params: \n',
+          params,
+        );
 
-      switch (contentType) {
-        case 'text/plain':
-          await this.publishEvent({
-            dialogId,
-            event: {
-              type: 'ContentEvent',
-              contentType,
-              message,
-            },
-          }, (error, response) => {
-            if (error) {
-              this.signale.fatal(
-                log.error('Error sending message:\n'),
-                log.obj(error),
+        switch (contentType) {
+          case 'text/plain':
+            await this.publishEvent({
+              dialogId,
+              event: {
+                type: 'ContentEvent',
+                contentType,
+                message,
+              },
+            }, (error, response) => {
+              if (error) {
+                this.signale.fatal(
+                  log.error('Error sending message:\n'),
+                  log.obj(error),
+                );
+                resolve({
+                  code: error.code,
+                  message: error.body,
+                });
+              }
+
+              this.signale.success(
+                log.success('Send message response:\n'),
+                log.obj(response),
               );
+
               resolve({
-                code: error.code,
-                message: error.body,
+                code: 200,
+                message: 'Message sent',
               });
-            }
-
-            this.signale.success(
-              log.error('Send message response:\n'),
-              log.obj(response),
-            );
-
-            resolve({
-              code: 200,
-              message: 'Message sent',
             });
-          });
-          break;
+            break;
 
-        default:
-          reject({
-            code: 405,
-            message: 'Method not supported',
-          });
-          break;
+          default:
+            reject(new Error('Method not supported'));
+            break;
+        }
+      } else {
+        reject(new Error('Didn\'t supply needed parameters'));
       }
     });
   }
@@ -246,7 +247,8 @@ class WiserAgent extends Agent {
           | description: triggers whenever there is a new message
         */
         if (
-          this.webhooks.new_message_arrived_webhook
+          this.webhooks
+          && this.webhooks.new_message_arrived_webhook
           && (!this.openConversations[convId].seenMessagesId.includes(messageId) || isFirstMessage)
         ) {
           await triggerWebhook(this.webhooks.new_message_arrived_webhook, {
@@ -282,6 +284,7 @@ class WiserAgent extends Agent {
         */
         if (
           messageDetails.location
+          && this.webhooks
           && this.webhooks.coordinates_webhook
         ) {
           await triggerWebhook(this.webhooks.coordinates_webhook, {
@@ -308,7 +311,10 @@ class WiserAgent extends Agent {
               );
             });
 
-          if (this.webhooks.new_file_in_conversation_webhook) {
+          if (
+            this.webhooks
+            && this.webhooks.new_file_in_conversation_webhook
+          ) {
             await triggerWebhook(this.webhooks.new_file_in_conversation_webhook, {
               fileURL,
               convId,
@@ -340,7 +346,10 @@ class WiserAgent extends Agent {
             | name: new_conversation_webhook
             | description: triggers whenever there is a new conversation
           */
-          if (this.webhooks.new_conversation_webhook) {
+          if (
+            this.webhooks
+            && this.webhooks.new_conversation_webhook
+          ) {
             await triggerWebhook(this.webhooks.new_conversation_webhook, parsedConversationDetails);
 
             this.signale.success(

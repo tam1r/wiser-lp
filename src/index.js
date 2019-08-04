@@ -1,8 +1,8 @@
 require('dotenv').config();
 
 const formidable = require('express-formidable');
-const bodyParser = require('body-parser');
 const swagger = require('swagger-ui-express');
+const bodyParser = require('body-parser');
 const sentry = require('@sentry/node');
 const express = require('express');
 const signale = require('signale');
@@ -218,11 +218,10 @@ async function wiserLP() {
 
     const { accountId } = validatedMetadata;
 
-    signale.info(`Disposng of ${accountId} account`);
-    AgentsClusterService.agents[accountId].dispose();
-
     try {
       // TODO: authenticate before updating
+      signale.info(`Disposng of ${accountId} account`);
+      AgentsClusterService.agents[accountId].dispose();
       await AgentsClusterService.updateAgent(validatedMetadata);
     } catch (error) {
       signale.fatal(error);
@@ -254,51 +253,69 @@ async function wiserLP() {
     });
 
     const { accountId } = validatedMetadata;
-
-    signale.info(`Disposng of ${accountId} account`);
-    AgentsClusterService.agents[accountId].dispose();
+    const newMetadata = {
+      ...validatedMetadata,
+      webhooks: {
+        new_conversation_webhook: validatedMetadata.new_conversation_webhook || null,
+        new_file_in_conversation_webhook: validatedMetadata.new_file_in_conversation_webhook || null, // eslint-disable-line
+        new_message_arrived_webhook: validatedMetadata.new_message_arrived_webhook || null,
+        coordinates_webhook: validatedMetadata.coordinates_webhook || null,
+      },
+    };
 
     try {
-      await AgentsClusterService.updateAgent(validatedMetadata);
+      // TODO: authenticate before updating
+      signale.info(`Disposng of ${accountId} account`);
+      AgentsClusterService.agents[accountId].dispose();
+      await AgentsClusterService.updateAgent(newMetadata);
     } catch (error) {
       signale.fatal(error);
       return res.status(500).send('There was an error while trying to update the Agent');
     }
 
-    AgentsClusterService.agents[accountId].updateConf(validatedMetadata);
-    AgentsClusterService.agents[accountId].init();
-    const consumerId = AgentsClusterService.agents[accountId].getConsumerId();
+    try {
+      AgentsClusterService.agents[accountId].updateConf(validatedMetadata);
+      AgentsClusterService.agents[accountId].init();
+      const consumerId = AgentsClusterService.agents[accountId].getConsumerId();
 
-    signale.info(`Reconnecting ${accountId} account`);
+      signale.info(`Reconnecting ${accountId} account`);
 
-    return res
-      .contentType('application/json')
-      .status(200)
-      .send({
-        accountId,
-        consumerId,
-        mesage: 'Agent udpated successfully',
-      });
+      return res
+        .contentType('application/json')
+        .status(200)
+        .send({
+          accountId,
+          consumerId,
+          mesage: 'Agent udpated successfully',
+        });
+    } catch (error) {
+      signale.fatal(error);
+      return res.status(500).send('There was an error while trying to update the Agent');
+    }
   });
 
   app.post('/send-message', async (req, res) => {
     const { credentials, message } = req.body;
 
-    const validatedCredentials = await schema.validate(credentials, schemas.user.model)
-      .catch((error) => {
-        signale.fatal(error);
-        return res.status(400).send(error);
-      });
+    const validatedCredentials = await schema.validate(
+      credentials,
+      schemas.user.model,
+    ).catch((error) => {
+      signale.fatal(error);
+      return res.status(400).send(error);
+    });
 
     // TODO: validate the credentials are right
 
     const { liveperson_accountid: accountId } = validatedCredentials;
 
-    const validatedMessage = await schema.validate(message, schemas.user.actions.sendMessage)
-      .catch((error) => {
-        signale.fatal(error);
-        return res.status(400).send(error);
-      });
+    const validatedMessage = await schema.validate(
+      message,
+      schemas.user.actions.sendMessage,
+    ).catch((error) => {
+      signale.fatal(error);
+      return res.status(400).send(error);
+    });
 
     try {
       const response = await AgentsClusterService.agents[accountId].sendMessage(validatedMessage);
@@ -309,18 +326,16 @@ async function wiserLP() {
         .send({
           accountId,
           consumerId,
-          ...response.message,
+          message: response.message,
         });
     } catch (error) {
-      return res
-        .status(error.code)
-        .send(error);
+      return res.status(400).send(error);
     }
   });
   app.post('/send-message-form', formidable(), async (req, res) => {
     const validatedMetadata = await schema.validate(
       req.fields,
-      schemas.actions.sendMessageForm,
+      schemas.user.actions.sendMessageForm,
     ).catch((error) => {
       signale.fatal(error);
       return res.status(400).send(error);
@@ -339,12 +354,10 @@ async function wiserLP() {
         .send({
           accountId,
           consumerId,
-          ...response.message,
+          message: response.message,
         });
     } catch (error) {
-      return res
-        .status(error.code)
-        .send(error);
+      return res.status(400).send(error);
     }
   });
 
@@ -482,6 +495,7 @@ async function wiserLP() {
     }
   });
 
+  /* Admin panel endpoints */
   app.post('/login', async (req, res) => {
     const validatedMetadata = await schema.validate(
       req.body,
@@ -523,6 +537,18 @@ async function wiserLP() {
       .send({
         msg: 'Invalid credentials',
       });
+  });
+  app.get('/active-conversations', async (req, res) => {
+    const { accountId } = req.query;
+
+    // TODO: implement authentication
+
+    try {
+      const conversations = await AgentsClusterService.agents[accountId].getConversations();
+      return res.status(200).send(conversations);
+    } catch (error) {
+      return res.status(400).send(error);
+    }
   });
 
   app.get('/', (req, res) => res

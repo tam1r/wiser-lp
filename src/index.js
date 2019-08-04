@@ -544,7 +544,7 @@ async function wiserLP() {
     // TODO: implement authentication
 
     try {
-      const conversations = await AgentsClusterService.agents[accountId].getConversations();
+      const conversations = await AgentsClusterService.getConversations(accountId);
       return res.status(200).send(conversations);
     } catch (error) {
       return res.status(400).send(error);

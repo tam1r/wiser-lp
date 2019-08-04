@@ -9,7 +9,7 @@ import {
   TextInputField,
 } from 'evergreen-ui';
 
-const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 const Configuration = (props) => {
   const { user } = props;
@@ -19,6 +19,12 @@ const Configuration = (props) => {
   } = user;
 
   const [isUpdating, setIsUpdating] = useState(false);
+  const metadata = [
+    { name: 'coordinates_webhook', label: 'Coordinates shared', description: 'Triggered whenever a user shares their geolocation' },
+    { name: 'new_conversation_webhook', label: 'New conversation', description: 'Triggered whenever there is a new conversation' },
+    { name: 'new_file_in_conversation_webhook', label: 'File shared', description: 'Triggered whenever a user shares a media file' },
+    { name: 'new_message_arrived_webhook', label: 'New message', description: 'Triggered whenever there is a new message' },
+  ];
 
   const saveChanges = async () => {
     setIsUpdating(true);
@@ -30,14 +36,7 @@ const Configuration = (props) => {
     });
 
     setIsUpdating(false);
-  }
-
-  const metadata = [
-    { name: 'coordinates_webhook', label: 'Coordinates shared', description: 'Triggered whenever a user shares their geolocation' },
-    { name: 'new_conversation_webhook', label: 'New conversation', description: 'Triggered whenever there is a new conversation' },
-    { name: 'new_file_in_conversation_webhook', label: 'File shared', description: 'Triggered whenever a user shares a media file' },
-    { name: 'new_message_arrived_webhook', label: 'New message', description: 'Triggered whenever there is a new message' },
-  ];
+  };
 
   return (
     <Pane>
@@ -68,8 +67,9 @@ const Configuration = (props) => {
           <Heading size={700} marginBottom={16}>
             Webhooks
           </Heading>
-          {metadata.map((data) => (
+          {metadata.map(data => (
             <Pane
+              key={data.label}
               display="flex"
               flexDirection="row"
               alignItems="center"
@@ -77,8 +77,9 @@ const Configuration = (props) => {
               <TextInputField
                 width="90%"
                 label={data.label}
-                value={user[data.name]}
+                defaultValue={user[data.name]}
                 disabled={isUpdating}
+                // onChange={({ target: { value } }) => {}}
               />
               <Tooltip content={data.description}>
                 <Icon icon="info-sign" color="lightgray" marginLeft={8} />

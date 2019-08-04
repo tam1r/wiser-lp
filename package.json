@@ -8,7 +8,7 @@
     "dev": "concurrently \"yarn start-backend-dev\" \"yarn start-frontend-dev\"",
     "start-backend-prod": "NODE_ENV=production node src/index.js",
     "start-frontend-prod": "cd src/admin-panel && yarn start",
-    "start-backend-dev": "NODE_ENV=development node src/index.js",
+    "start-backend-dev": "NODE_ENV=development nodemon src/index.js",
     "start-frontend-dev": "cd src/admin-panel && yarn start",
     "lint": "eslint . --max-warnings=0 && echo 'No linting errors ✔'",
     "postinstall": "cd src && cd admin-panel && yarn"
@@ -48,11 +48,13 @@
     "request": "^2.88.0",
     "schm": "^0.4.1",
     "signale": "^1.4.0",
-    "swagger-ui-express": "^4.0.2"
+    "swagger-ui-express": "^4.0.2",
+    "yamljs": "^0.3.0"
   },
   "devDependencies": {
     "eslint": "^5.16.0",
     "eslint-config-airbnb-base": "^13.1.0",
-    "eslint-plugin-import": "^2.17.2"
+    "eslint-plugin-import": "^2.17.2",
+    "nodemon": "^1.19.1"
   }
 }

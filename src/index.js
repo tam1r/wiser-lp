@@ -8,10 +8,15 @@ const express = require('express');
 const signale = require('signale');
 const morgan = require('morgan');
 const schema = require('schm');
+const yaml = require('yamljs');
 const http = require('http');
 const cors = require('cors');
-const docs = require('./docs/swagger.json');
+const path = require('path');
+
+const docsPath = path.resolve(__dirname, './docs/swagger.yml');
 const docsConfig = require('./docs/config');
+
+const docs = yaml.load(docsPath);
 
 const app = express();
 
@@ -217,6 +222,7 @@ async function wiserLP() {
     AgentsClusterService.agents[accountId].dispose();
 
     try {
+      // TODO: authenticate before updating
       await AgentsClusterService.updateAgent(validatedMetadata);
     } catch (error) {
       signale.fatal(error);

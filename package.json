@@ -12,7 +12,7 @@
     "start-frontend-dev": "cd src/admin-panel && yarn start",
     "lint": "eslint . --max-warnings=0 && echo 'No linting errors ✔'",
     "postinstall": "cd src && cd admin-panel && yarn",
-    "heroku-postbuild": "cd admin-panel && yarn && yarn run build"
+    "heroku-postbuild": "cd src/admin-panel && yarn && yarn run build"
   },
   "repository": {
     "type": "git",

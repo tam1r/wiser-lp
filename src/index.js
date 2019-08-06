@@ -25,7 +25,7 @@ const { handleDisconnect, keepAlive, promisifyQuery } = require('./db/utils');
 const WiserAgent = require('./api/live-person/WiserAgent');
 const AgentsCluster = require('./service/AgentsCluster.js');
 const schemas = require('./schemas');
-const { log } = require('./utils');
+const { log, delay } = require('./utils');
 
 signale.config({
   displayFilename: true,
@@ -39,9 +39,11 @@ const PORT = 5000;
 let connection;
 
 function keepAwake() {
-  setInterval(() => {
-    http.get('http://lpstaging.herokuapp.com/');
-  }, 100000);
+  if (process.env.NODE_ENV === 'production') {
+    setInterval(() => {
+      http.get('http://lpstaging.herokuapp.com/');
+    }, 100000);
+  }
 }
 
 async function wiserLP() {
@@ -136,6 +138,7 @@ async function wiserLP() {
     });
 
     // TODO: check if user with these credentials exist
+    // TODO: test if login successfull before adding to the db
 
     // Add client to the database
     db.addClient(connection, validatedCredentials);
@@ -153,18 +156,27 @@ async function wiserLP() {
       accessToken: validatedCredentials.liveperson_accesstoken,
       accessTokenSecret: validatedCredentials.liveperson_accesstokensecret,
     };
+    try {
+      const agent = new WiserAgent(credentials, webhooks);
 
-    AgentsClusterService.agents[accountId] = new WiserAgent(credentials, webhooks);
+      await delay(5000);
 
-    signale.success(
-      log.success('Successfully registered user with credentials:\n'),
-      log.obj(credentials),
-    );
+      AgentsClusterService.agents[accountId] = agent;
 
-    return res
-      .contentType('application/json')
-      .status(200)
-      .send({ message: 'Register success', accountId });
+      signale.success(
+        log.success('Successfully registered user with credentials:\n'),
+        log.obj(credentials),
+      );
+
+      return res
+        .contentType('application/json')
+        .status(200)
+        .send({ message: 'Register success', accountId });
+    } catch (error) {
+      return res
+        .status(403)
+        .send({ message: 'Invalid credentials' });
+    }
   });
   app.post('/register-client-form', formidable(), async (req, res) => {
     const validatedCredentials = await schema.validate(

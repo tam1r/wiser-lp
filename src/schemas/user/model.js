@@ -10,7 +10,7 @@ module.exports = schema({
   liveperson_accesstokensecret: { type: String, required: false },
   webhooks: {
     type: Object,
-    required: true,
+    required: false,
     properties: {
       new_file_in_conversation_webhook: {
         type: String,

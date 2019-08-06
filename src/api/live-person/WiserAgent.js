@@ -21,7 +21,54 @@ class WiserAgent extends Agent {
     this.signale = signale;
     this.lpTimezone = null;
     this.domains = [];
-    this.init();
+    try {
+      this.init();
+    } catch (e) {
+      throw new Error(e);
+    }
+  }
+
+  getDomains() {
+    return this.domains;
+  }
+
+  getConsumerId() {
+    return this.consumerId;
+  }
+
+  getConf() {
+    return this.conf;
+  }
+
+  getWebhooks() {
+    return this.webhooks;
+  }
+
+  updateConf(params) {
+    this.conf = {
+      ...this.conf,
+      ...params,
+    };
+  }
+
+  async setDomains() {
+    this.signale.info('Retrieving account domains');
+
+    const { conf: credentials } = this;
+    const { accountId } = credentials;
+
+    try {
+      const URL = `https://lo.agentvep.liveperson.net/api/account/${accountId}/login?v=1.3`;
+
+      const { data } = await axios.post(URL, credentials);
+      this.domains = data.csdsCollectionResponse.baseURIs;
+
+      this.signale.success(
+        log.success('Successfully retrieved domains'),
+      );
+    } catch (e) {
+      throw new Error(e);
+    }
   }
 
   async sendMessage(params) {
@@ -77,6 +124,10 @@ class WiserAgent extends Agent {
     });
   }
 
+  async createConversation(params) { // eslint-disable-line
+    // TODO: implement
+  }
+
   async getTimezonePrefix() {
     const domains = await this.getDomains();
     const [botURL] = domains.filter(({ baseURI }) => baseURI.includes('le.liveperson.net'));
@@ -108,47 +159,9 @@ class WiserAgent extends Agent {
     }
   }
 
-  getDomains() {
-    return this.domains;
-  }
-
-  async setDomains() {
-    this.signale.info('Retrieving account domains');
-
-    const { conf: credentials } = this;
-    const { accountId } = credentials;
-    const URL = `https://lo.agentvep.liveperson.net/api/account/${accountId}/login?v=1.3`;
-
-    const { data } = await axios.post(URL, credentials);
-    this.domains = data.csdsCollectionResponse.baseURIs;
-
-    this.signale.success(
-      log.success('Successfully retrieved domains'),
-    );
-  }
-
-  getConsumerId() {
-    return this.consumerId;
-  }
-
-  getConf() {
-    return this.conf;
-  }
-
-  getWebhooks() {
-    return this.webhooks;
-  }
-
-  updateConf(params) {
-    this.conf = {
-      ...this.conf,
-      ...params,
-    };
-  }
-
   async init() {
     await this.setDomains();
-    this.getTimezonePrefix();
+    await this.getTimezonePrefix();
 
     this.on('connected', () => {
       this.connecting = false;

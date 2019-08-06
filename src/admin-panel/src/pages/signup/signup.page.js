@@ -1,37 +1,41 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import {
+  toaster,
   Pane,
   Card,
+  Text,
   Link,
   Button,
   Heading,
   TextInputField,
 } from 'evergreen-ui';
 
-const LogIn = (props) => {
+const SignUp = (props) => { // eslint-disable-line
+  const [username, setUsername] = useState('');
   const [accountId, setAccountId] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(false);
-  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [isSigningUp, setIsSigningIn] = useState(false);
 
-  const login = async () => {
+  const signup = async () => {
     setError(false);
-    setIsLoggingIn(true);
+    setIsSigningIn(true);
 
     try {
-      const { data } = await axios.post('/login', { accountId, password });
-      const user = JSON.stringify({
-        accountId,
-        ...data.user,
+      const { status } = await axios.post('/register-client', {
+        username,
+        liveperson_accountid: accountId,
+        liveperson_password: password,
       });
 
-      localStorage.setItem('user', user);
+      if (status === 200) {
+        toaster.success('Sign up Success');
+      }
 
-      setIsLoggingIn(false);
-      props.history.push('/');
+      setIsSigningIn(false);
     } catch (e) {
-      setIsLoggingIn(false);
+      setIsSigningIn(false);
       setError(true);
     }
   };
@@ -49,7 +53,7 @@ const LogIn = (props) => {
         size={900}
         marginTop={250}
       >
-        WiserLP
+        Sign Up
       </Heading>
 
       <Card
@@ -64,6 +68,16 @@ const LogIn = (props) => {
         flexDirection="column"
         justifyContent="space-between"
       >
+        {/* SignUp Page: Username Field */}
+        <TextInputField
+          required
+          isInvalid={error}
+          label="Username"
+          value={username}
+          disabled={isSigningUp}
+          onChange={({ target: { value } }) => { setError(false); setUsername(value); }}
+        />
+
         {/* SignUp Page: Account Id Field */}
         <TextInputField
           required
@@ -71,11 +85,11 @@ const LogIn = (props) => {
           type="number"
           label="Account ID"
           value={accountId}
-          disabled={isLoggingIn}
+          disabled={isSigningUp}
           onChange={({ target: { value } }) => { setError(false); setAccountId(value); }}
         />
 
-        {/* SignUp Page: Password Field */}
+        {/* SignUp Page: Passwrd Field */}
         <TextInputField
           required
           isInvalid={error}
@@ -83,13 +97,13 @@ const LogIn = (props) => {
           label="Password"
           value={password}
           marginBottom={12}
-          disabled={isLoggingIn}
+          disabled={isSigningUp}
           onChange={({ target: { value } }) => { setError(false); setPassword(value); }}
           onKeyUp={({ keyCode, which }) => {
             const key = keyCode || which;
 
             if (key === 13) {
-              login();
+              signup();
               return false;
             }
 
@@ -97,28 +111,26 @@ const LogIn = (props) => {
           }}
         />
 
-        {/* TODO: validate sign up errors
         <Text color="red" className={!error && 'hide'}>
           Invalid Account ID or Password
         </Text>
-        */}
 
         <Button
-          onClick={login}
+          onClick={signup}
           appearance="primary"
           justifyContent="center"
-          isLoading={isLoggingIn}
+          isLoading={isSigningUp}
           marginTop={8}
         >
-          { !isLoggingIn && 'Log In' }
+          { !isSigningUp && 'Sign Up' }
         </Button>
       </Card>
 
-      <Link href="/signup" marginTop={16}>
-        Sign up
+      <Link href="/login" marginTop={16}>
+        Log In
       </Link>
     </Pane>
   );
 };
 
-export { LogIn };
+export { SignUp };

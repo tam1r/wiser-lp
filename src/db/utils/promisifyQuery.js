@@ -1,9 +1,9 @@
 const signale = require('signale');
 const { log } = require('../../utils');
 
-function promisifyQuery(connection, query) {
+function promisifyQuery(connection, query, params = []) {
   return new Promise(async (resolve, reject) => {
-    await connection.query(query, (error, response) => {
+    await connection.query(query, params, (error, response) => {
       if (error) {
         signale.fatal(
           log.error('Error processing query\n'),

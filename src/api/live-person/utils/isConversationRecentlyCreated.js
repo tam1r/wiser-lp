@@ -2,7 +2,7 @@ const moment = require('moment-timezone');
 
 function isConversationRecentlyCreated(timestamp, tz) {
   const conversationStartTime = moment.tz(timestamp, tz);
-  const now = moment.tz(tz).subtract(1, 'minutes'); // subtract 5 minutes to current time as a threshold
+  const now = moment.tz(tz).subtract(1, 'minutes'); // subtract 1 minute to current time as a threshold
   const diff = moment.duration(conversationStartTime.diff(now));
   const isRecentlyCreated = now.valueOf() < conversationStartTime.valueOf();
 

@@ -563,6 +563,26 @@ async function wiserLP() {
     }
   });
 
+  app.get('/account-metadata', async (req, res) => {
+    const { accountId } = req.query;
+
+    // TODO: implement authentication
+
+    try {
+      const webhooks = AgentsClusterService.agents[accountId].getWebhooks();
+      const domains = AgentsClusterService.agents[accountId].getDomains();
+      const consumerId = AgentsClusterService.agents[accountId].getConsumerId();
+
+      return res.status(200).send({
+        consumerId,
+        webhooks,
+        domains,
+      });
+    } catch (error) {
+      return res.status(400).send(error);
+    }
+  });
+
   app.get('/', (req, res) => res
     .status(200)
     .send('WiserLP'));

@@ -1,4 +1,7 @@
-import React, { useState } from 'react';
+import React, {
+  useState, useEffect, forwardRef, useImperativeHandle,
+} from 'react';
+import axios from 'axios';
 import {
   toaster,
   Icon,
@@ -9,9 +12,7 @@ import {
   TextInputField,
 } from 'evergreen-ui';
 
-const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
-
-const Configuration = (props) => {
+const Configuration = forwardRef((props, ref) => {
   const { user } = props;
   const {
     accountId,
@@ -19,21 +20,58 @@ const Configuration = (props) => {
   } = user;
 
   const [isUpdating, setIsUpdating] = useState(false);
-  const metadata = [
-    { name: 'coordinates_webhook', label: 'Coordinates shared', description: 'Triggered whenever a user shares their geolocation' },
-    { name: 'new_conversation_webhook', label: 'New conversation', description: 'Triggered whenever there is a new conversation' },
-    { name: 'new_file_in_conversation_webhook', label: 'File shared', description: 'Triggered whenever a user shares a media file' },
-    { name: 'new_message_arrived_webhook', label: 'New message', description: 'Triggered whenever there is a new message' },
-  ];
+  const [metadata, setMetadata] = useState([
+    { name: 'coordinates_webhook', label: 'Coordinates shared', description: 'Triggered whenever a user shares their geolocation', value: user.coordinates_webhook }, // eslint-disable-line
+    { name: 'new_conversation_webhook', label: 'New conversation', description: 'Triggered whenever there is a new conversation', value: user.new_conversation_webhook }, // eslint-disable-line
+    { name: 'new_file_in_conversation_webhook', label: 'File shared', description: 'Triggered whenever a user shares a media file', value: user.new_file_in_conversation }, // eslint-disable-line
+    { name: 'new_message_arrived_webhook', label: 'New message', description: 'Triggered whenever there is a new message', value: user.new_message_arrived_webhook }, // eslint-disable-line
+  ]);
+
+  const loadInfo = async () => {
+    const { data } = await axios.get(`/account-metadata?accountId=${accountId}`);
+    const { webhooks } = data;
+
+    const updatedMetadata = metadata.map(_metadata => ({
+      ..._metadata,
+      value: webhooks[_metadata.name],
+    }));
+
+    setMetadata(updatedMetadata);
+  };
+
+  useImperativeHandle(ref, () => ({
+    loadInfo,
+  }));
+
+  useEffect(() => {
+    loadInfo();
+  }, []);
 
   const saveChanges = async () => {
     setIsUpdating(true);
 
-    await sleep(2000);
+    const updatedUser = {
+      accountId,
+      webhooks: {},
+    };
 
-    toaster.success('Saved changes!', {
-      description: 'They may take a couple of minutes to take effect',
+    metadata.forEach((val) => {
+      if (val.value !== '') {
+        updatedUser.webhooks[val.name] = val.value;
+      }
     });
+
+    const { status } = await axios.put('/update-metadata', updatedUser);
+
+    if (status === 200) {
+      toaster.success('Saved changes!', {
+        description: 'They may take a couple of minutes to take effect',
+      });
+    } else {
+      toaster.success('Failed uploading changes!', {
+        description: 'Retry again in a couple of minutes, or contact an administrator',
+      });
+    }
 
     setIsUpdating(false);
   };
@@ -79,7 +117,13 @@ const Configuration = (props) => {
                 label={data.label}
                 defaultValue={user[data.name]}
                 disabled={isUpdating}
-                // onChange={({ target: { value } }) => {}}
+                onChange={({ target: { value } }) => {
+                  const updatedMetadata = [...metadata];
+                  const index = updatedMetadata.indexOf(data);
+                  updatedMetadata[index].value = value;
+
+                  setMetadata(updatedMetadata);
+                }}
               />
               <Tooltip content={data.description}>
                 <Icon icon="info-sign" color="lightgray" marginLeft={8} />
@@ -101,6 +145,6 @@ const Configuration = (props) => {
       </Button>
     </Pane>
   );
-};
+});
 
 export default Configuration;

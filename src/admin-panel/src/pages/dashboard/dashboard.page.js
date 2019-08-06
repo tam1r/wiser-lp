@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Pane,
   Menu,
@@ -13,24 +13,21 @@ import {
 
 import { capitalize } from '../../utils';
 
-import Home from './home/home.content.js';
-import Configuration from './configuration/configuration.content.js';
-import Conversations from './conversations/conversations.content.js';
+import Home from './home/home.content';
+import Configuration from './configuration/configuration.content';
+import Conversations from './conversations/conversations.content';
 
 const Dashboard = (props) => {
   const [user] = useState(JSON.parse(localStorage.getItem('user')) || null);
   const [currentPage, setCurrentPage] = useState(localStorage.getItem('currentPage') || 'home');
+  const configRef = useRef();
+  const conversationsRef = useRef();
 
   const pages = [
     { page: 'home', content: <Home user={user} /> },
-    { page: 'configuration', content: <Configuration user={user} /> },
-    { page: 'conversations', content: <Conversations user={user} /> },
+    { page: 'configuration', content: <Configuration user={user} ref={configRef} /> },
+    { page: 'conversations', content: <Conversations user={user} ref={conversationsRef} /> },
   ];
-
-  // useEffect(() => {
-  //   const { pathname } = window.location;
-  //   goToPage(pathname.substring(1, pathname.length));
-  // }, []);
 
   useEffect(() => {
     const { history } = props;
@@ -41,7 +38,7 @@ const Dashboard = (props) => {
 
     return () => {
       localStorage.setItem('currentPage', '');
-    }
+    };
   }, [props, user]);
 
   if (!user) {
@@ -52,14 +49,23 @@ const Dashboard = (props) => {
     localStorage.setItem('user', null);
     localStorage.setItem('currentPage', '');
     props.history.push('/login');
-  }
+  };
 
   const goToPage = (page) => {
     setCurrentPage(page);
     localStorage.setItem('currentPage', page);
     document.title = `WiserLP | ${capitalize(page)}`;
+
+    if (page === 'configuration') {
+      configRef.current.loadInfo();
+    }
+
+    if (page === 'conversations') {
+      conversationsRef.current.loadInfo();
+    }
+
     props.history.push(`/${page}`);
-  }
+  };
 
   return (
     <Pane
@@ -90,15 +96,15 @@ const Dashboard = (props) => {
 
           <Popover
             position={Position.BOTTOM_LEFT}
-            content={
+            content={(
               <Menu>
-               <Menu.Group title={`Account Id ${user.accountId}`}>
+                <Menu.Group title={`Account Id ${user.accountId}`}>
                   <Menu.Item intent="warning" icon="log-out" onSelect={logout}>
                     Log Out
                   </Menu.Item>
                 </Menu.Group>
               </Menu>
-            }
+            )}
           >
             <Avatar
               size={40}
@@ -143,7 +149,7 @@ const Dashboard = (props) => {
           marginRight={16}
           elevation={2}
         >
-          {pages.map(({ page, content }, index) => (
+          {pages.map(({ page, content }) => (
             <Pane
               key={page}
               id={`panel-${page}`}

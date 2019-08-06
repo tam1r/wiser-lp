@@ -168,7 +168,6 @@ class WiserAgent extends Agent {
 
       this.subscribeExConversations({
         convState: ['OPEN'],
-        agentIds: [this.agentId],
       }, (error, response) => {
         if (error) {
           this.signale.error(error);

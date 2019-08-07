@@ -583,9 +583,13 @@ async function wiserLP() {
     }
   });
 
-  app.get('/', (req, res) => res
-    .status(200)
-    .send('WiserLP'));
+  if (process.env.NODE_ENV === 'production') {
+    app.use(express.static(path.join(__dirname, 'admin-panel/build'))); // Serve any static files
+
+    app.get('*', (req, res) => { // Handle React routing, return all requests to React app
+      res.sendFile(path.join(__dirname, 'admin-panel/build', 'index.html'));
+    });
+  }
 
   app.listen(process.env.PORT || PORT, async () => {
     signale.success(

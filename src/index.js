@@ -177,7 +177,11 @@ async function wiserLP() {
         .send({ message: 'Invalid credentials' });
     };
 
-    agent = new WiserAgent(credentials, webhooks, onSuccess, onError);
+    try {
+      agent = new WiserAgent(credentials, webhooks, onSuccess, onError);
+    } catch (e) {
+      onError();
+    }
   }));
   app.post('/register-client-form', formidable(), (req, res) => new Promise(async (resolve) => {
     const validatedCredentials = await schema.validate(
@@ -228,7 +232,11 @@ async function wiserLP() {
         .send({ message: 'Invalid credentials' });
     };
 
-    agent = new WiserAgent(credentials, webhooks, onSuccess, onError);
+    try {
+      agent = new WiserAgent(credentials, webhooks, onSuccess, onError);
+    } catch (e) {
+      onError();
+    }
   }));
 
   app.put('/update-metadata', async (req, res) => {

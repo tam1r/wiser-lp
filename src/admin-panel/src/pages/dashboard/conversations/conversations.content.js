@@ -1,36 +1,35 @@
 import React, {
   useEffect,
   useState,
-  forwardRef,
-  useImperativeHandle,
+  useCallback,
 } from 'react';
 import axios from 'axios';
 import {
   Pane,
   Card,
   Table,
+  Button,
   Heading,
   SideSheet,
   Paragraph,
 } from 'evergreen-ui';
 
-const Conversations = forwardRef((props, ref) => {
+const Conversations = (props) => {
   const { user } = props;
   const [conversations, setConversations] = useState({});
   const [details, setDetails] = useState(false);
 
-  const loadInfo = async () => {
-    const { data } = await axios.get(`/active-conversations?accountId=${user.accountId}`);
-    setConversations(data);
-  };
-
-  useImperativeHandle(ref, () => ({
-    loadInfo,
-  }));
+  const loadInfo = useCallback(
+    async () => {
+      const { data } = await axios.get(`/active-conversations?accountId=${user.accountId}`);
+      setConversations(data);
+    },
+    [user.accountId],
+  );
 
   useEffect(() => {
     loadInfo();
-  }, []);
+  }, [loadInfo]);
 
   const content = Object.keys(conversations).map((key) => {
     const { conversationDetails } = conversations[key];
@@ -62,9 +61,22 @@ const Conversations = forwardRef((props, ref) => {
 
   return (
     <Pane>
-      <Heading size={700}>
-        Conversations
-      </Heading>
+      <Pane
+        display="flex"
+        flexDirection="row"
+        justifyContent="space-between"
+      >
+        <Heading size={700}>
+          Conversations
+        </Heading>
+
+        <Button
+          appearance="primary"
+          onClick={loadInfo}
+        >
+          Reload
+        </Button>
+      </Pane>
 
       <Table marginTop={16} display="flex" flexDirection="column">
         <Table.Head>
@@ -120,6 +132,6 @@ const Conversations = forwardRef((props, ref) => {
       </SideSheet>
     </Pane>
   );
-});
+};
 
 export default Conversations;

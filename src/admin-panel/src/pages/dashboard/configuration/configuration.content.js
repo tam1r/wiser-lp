@@ -1,5 +1,7 @@
 import React, {
-  useState, useEffect, forwardRef, useImperativeHandle,
+  useState,
+  useEffect,
+  useCallback,
 } from 'react';
 import axios from 'axios';
 import {
@@ -12,7 +14,7 @@ import {
   TextInputField,
 } from 'evergreen-ui';
 
-const Configuration = forwardRef((props, ref) => {
+const Configuration = (props) => {
   const { user } = props;
   const {
     accountId,
@@ -27,25 +29,26 @@ const Configuration = forwardRef((props, ref) => {
     { name: 'new_message_arrived_webhook', label: 'New message', description: 'Triggered whenever there is a new message', value: user.new_message_arrived_webhook }, // eslint-disable-line
   ]);
 
-  const loadInfo = async () => {
-    const { data } = await axios.get(`/account-metadata?accountId=${accountId}`);
-    const { webhooks } = data;
+  const loadInfo = useCallback(
+    async () => {
+      const { data } = await axios.get(`/account-metadata?accountId=${accountId}`);
+      const { webhooks } = data;
 
-    const updatedMetadata = metadata.map(_metadata => ({
-      ..._metadata,
-      value: webhooks[_metadata.name],
-    }));
+      if (webhooks.length > 0) {
+        const updatedMetadata = metadata.map(_metadata => ({
+          ..._metadata,
+          value: webhooks[_metadata.name],
+        }));
 
-    setMetadata(updatedMetadata);
-  };
-
-  useImperativeHandle(ref, () => ({
-    loadInfo,
-  }));
+        setMetadata(updatedMetadata);
+      }
+    },
+    [accountId], // eslint-disable-line
+  );
 
   useEffect(() => {
     loadInfo();
-  }, []);
+  }, [loadInfo]);
 
   const saveChanges = async () => {
     setIsUpdating(true);
@@ -145,6 +148,6 @@ const Configuration = forwardRef((props, ref) => {
       </Button>
     </Pane>
   );
-});
+};
 
 export default Configuration;

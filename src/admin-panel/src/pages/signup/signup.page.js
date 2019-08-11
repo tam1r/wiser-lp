@@ -12,6 +12,7 @@ import {
 } from 'evergreen-ui';
 
 const SignUp = (props) => { // eslint-disable-line
+  const { history } = props;
   const [username, setUsername] = useState('');
   const [accountId, setAccountId] = useState('');
   const [password, setPassword] = useState('');
@@ -31,10 +32,17 @@ const SignUp = (props) => { // eslint-disable-line
 
       if (status === 200) {
         toaster.success('Sign up Success');
+
+        setTimeout(() => {
+          history.push('/login');
+        }, 1333);
+      } else {
+        setError(true);
       }
 
       setIsSigningIn(false);
     } catch (e) {
+      toaster.danger('Invalid credentials');
       setIsSigningIn(false);
       setError(true);
     }

@@ -11,7 +11,7 @@ const reconnectAttempts = 35;
 const reconnectRatio = 1.25; // ratio to determine reconnect exponential back-off
 
 class WiserAgent extends Agent {
-  constructor(credentials, webhooks) {
+  constructor(credentials, webhooks, onSuccess = null, onError = null) {
     super(credentials);
     this.connecting = true;
     this.conf = credentials;
@@ -21,11 +21,9 @@ class WiserAgent extends Agent {
     this.signale = signale;
     this.lpTimezone = null;
     this.domains = [];
-    try {
-      this.init();
-    } catch (e) {
-      throw new Error(e);
-    }
+    this.init();
+    this.onSuccess = onSuccess;
+    this.onError = onError;
   }
 
   getDomains() {
@@ -67,7 +65,7 @@ class WiserAgent extends Agent {
         log.success('Successfully retrieved domains'),
       );
     } catch (e) {
-      throw new Error(e);
+      // keep the silence
     }
   }
 
@@ -130,32 +128,35 @@ class WiserAgent extends Agent {
 
   async getTimezonePrefix() {
     const domains = await this.getDomains();
-    const [botURL] = domains.filter(({ baseURI }) => baseURI.includes('le.liveperson.net'));
-    const prefix = botURL.baseURI.substring(0, 2);
 
-    /*
-      reference: https://knowledge.liveperson.com/data-reporting-report-builder-report-builder-overview.html
-      Z1 = Virginia, North America. The time zone for the Virginia farm is EST.
-      Z2 = UK. The time zone for the UK farm is GMT (or GMT+1 during Daylight Saving Time).
-      Z3 = Sydney, Australia. The time zone for the Sydney farm is AEST.
-    */
+    if (domains.length > 0) {
+      const [botURL] = domains.filter(({ baseURI }) => baseURI.includes('le.liveperson.net'));
+      const prefix = botURL.baseURI.substring(0, 2);
 
-    switch (prefix) {
-      case 'z1':
-        this.lpTimezone = 'America/Virgin';
-        break;
+      /*
+        reference: https://knowledge.liveperson.com/data-reporting-report-builder-report-builder-overview.html
+        Z1 = Virginia, North America. The time zone for the Virginia farm is EST.
+        Z2 = UK. The time zone for the UK farm is GMT (or GMT+1 during Daylight Saving Time).
+        Z3 = Sydney, Australia. The time zone for the Sydney farm is AEST.
+      */
 
-      case 'z2':
-        this.lpTimezone = 'Europe/London';
-        break;
+      switch (prefix) {
+        case 'z1':
+          this.lpTimezone = 'America/Virgin';
+          break;
 
-      case 'z3':
-        this.lpTimezone = 'Australia/Sydney';
-        break;
+        case 'z2':
+          this.lpTimezone = 'Europe/London';
+          break;
 
-      default:
-        this.lpTimezone = null;
-        break;
+        case 'z3':
+          this.lpTimezone = 'Australia/Sydney';
+          break;
+
+        default:
+          this.lpTimezone = null;
+          break;
+      }
     }
   }
 
@@ -163,9 +164,16 @@ class WiserAgent extends Agent {
     await this.setDomains();
     await this.getTimezonePrefix();
 
-    this.on('connected', () => {
-      this.connecting = false;
+    await this.on('connected', () => {
       const { accountId } = this.conf;
+
+      if (this.onSuccess) {
+        this.onSuccess();
+        this.onSuccess = null;
+        this.onError = null;
+      }
+
+      this.connecting = false;
 
       if (this._retryConnection) {
         clearTimeout(this._retryConnection);
@@ -425,22 +433,25 @@ class WiserAgent extends Agent {
     };
 
     this.on('error', (error) => {
-      Sentry.captureException(error);
+      if (this.onError) {
+        this.onError();
+        this.onError = null;
+        this.onSuccess = null;
+      } else {
+        Sentry.captureException(error);
 
-      this.signale.fatal(new Error(log.obj(error)));
+        this.signale.fatal(new Error(log.obj(error)));
 
-      if (error && error.code === 401) {
-        this.connecting = true;
-        this._reconnect();
+        if (error && error.code === 401) {
+          this.connecting = true;
+          this._reconnect();
+        }
       }
     });
 
     this.on('closed', () => {
       this.signale.fatal(new Error('Socket closed'));
-
       clearInterval(this.pingClock);
-      this.connecting = true;
-      this._reconnect();
     });
   }
 }

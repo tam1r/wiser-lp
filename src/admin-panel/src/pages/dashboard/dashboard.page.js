@@ -56,14 +56,6 @@ const Dashboard = (props) => {
     localStorage.setItem('currentPage', page);
     document.title = `WiserLP | ${capitalize(page)}`;
 
-    if (page === 'configuration') {
-      configRef.current.loadInfo();
-    }
-
-    if (page === 'conversations') {
-      conversationsRef.current.loadInfo();
-    }
-
     props.history.push(`/${page}`);
   };
 

@@ -179,7 +179,7 @@ async function wiserLP() {
 
     agent = new WiserAgent(credentials, webhooks, onSuccess, onError);
   }));
-  app.post('/register-client-form', formidable(), async (req, res) => {
+  app.post('/register-client-form', formidable(), (req, res) => new Promise(async (resolve) => {
     const validatedCredentials = await schema.validate(
       req.fields,
       schemas.user.modelForm,
@@ -188,12 +188,7 @@ async function wiserLP() {
       return res.status(400).send(error);
     });
 
-    // TODO: check if user with these credentials exist
-
-    // Add client to the database
-    db.addClient(connection, validatedCredentials);
-
-    // Init liveperson service for recently created user
+    let agent;
     const accountId = validatedCredentials.liveperson_accountid;
     const { webhooks } = validatedCredentials;
 
@@ -207,18 +202,34 @@ async function wiserLP() {
       accessTokenSecret: validatedCredentials.liveperson_accesstokensecret,
     };
 
-    AgentsClusterService.agents[accountId] = new WiserAgent(credentials, webhooks);
+    const onSuccess = () => {
+      // TODO: check if user with these credentials exist
+      // TODO: test if login successfull before adding to the db
+      db.addClient(connection, validatedCredentials);
 
-    signale.success(
-      log.success('Successfully registered user with credentials:\n'),
-      log.obj(credentials),
-    );
+      signale.success(
+        log.success('Successfully registered user with credentials:\n'),
+        log.obj(credentials),
+      );
 
-    return res
-      .contentType('application/json')
-      .status(200)
-      .send({ message: 'Register success', accountId });
-  });
+      AgentsClusterService.agents[accountId] = agent;
+
+      resolve(
+        res
+          .contentType('application/json')
+          .status(200)
+          .send({ message: 'Register success', accountId }),
+      );
+    };
+
+    const onError = () => {
+      res
+        .status(403)
+        .send({ message: 'Invalid credentials' });
+    };
+
+    agent = new WiserAgent(credentials, webhooks, onSuccess, onError);
+  }));
 
   app.put('/update-metadata', async (req, res) => {
     const validatedMetadata = await schema.validate(

@@ -20,13 +20,19 @@ class AgentsCluster {
         liveperson_accesstokensecret,
         webhooks,
       } = conf;
+      let new_conversation_webhook = null;
+      let new_file_in_conversation_webhook = null;
+      let new_message_arrived_webhook = null;
+      let coordinates_webhook = null;
 
-      const {
-        new_conversation_webhook,
-        new_file_in_conversation_webhook,
-        new_message_arrived_webhook,
-        coordinates_webhook,
-      } = webhooks;
+      if (webhooks) {
+        ({
+          new_conversation_webhook,
+          new_file_in_conversation_webhook,
+          new_message_arrived_webhook,
+          coordinates_webhook,
+        } = webhooks);
+      }
 
       const agentConf = this.agents[accountId].getConf();
       const oldWebhooks = this.agents[accountId].getWebhooks();
@@ -62,7 +68,7 @@ class AgentsCluster {
       const agent = this.agents[agentId];
 
       if (!agent) {
-        return reject(new Error(`There is no existing agent with id: ${convId}`));
+        return reject(new Error(`There is no existing agent with id: ${agentId}`));
       }
 
       if (!agent.openConversations[convId]) {
@@ -70,6 +76,18 @@ class AgentsCluster {
       }
 
       return resolve(agent.openConversations[convId].conversationDetails);
+    });
+  }
+
+  async getConversations(agentId) {
+    return new Promise((resolve, reject) => {
+      const agent = this.agents[agentId];
+
+      if (!agent) {
+        return reject(new Error(`There is no existing agent with id: ${agentId}`));
+      }
+
+      return resolve(agent.openConversations);
     });
   }
 

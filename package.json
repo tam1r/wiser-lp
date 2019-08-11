@@ -4,9 +4,15 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "NODE_ENV=production node src/index.js",
-    "dev": "NODE_ENV=development node src/index.js",
-    "lint": "eslint . --max-warnings=0 && echo 'No linting errors ✔'"
+    "start": "yarn start-backend-prod",
+    "dev": "concurrently \"yarn start-backend-dev\" \"yarn start-frontend-dev\"",
+    "start-backend-prod": "NODE_ENV=production node src/index.js",
+    "start-frontend-prod": "cd src/admin-panel && yarn start",
+    "start-backend-dev": "NODE_ENV=development nodemon src/index.js",
+    "start-frontend-dev": "cd src/admin-panel && yarn start",
+    "lint": "eslint . --max-warnings=0 && echo 'No linting errors ✔'",
+    "postinstall": "cd src && cd admin-panel && yarn",
+    "heroku-postbuild": "cd src/admin-panel && yarn && yarn run build"
   },
   "repository": {
     "type": "git",
@@ -18,32 +24,31 @@
     "url": "https://github.com/tam1r/wiser-lp/issues"
   },
   "homepage": "https://github.com/tam1r/wiser-lp#readme",
-  "husky": {
-    "hooks": {
-      "pre-commit": "npm run lint",
-      "pre-push": "npm run lint"
-    }
-  },
   "dependencies": {
     "@sentry/node": "^5.2.0",
     "axios": "^0.19.0",
     "body-parser": "^1.18.3",
     "chalk": "^2.4.2",
+    "concurrently": "^4.1.1",
+    "cors": "^2.8.5",
     "dotenv": "^7.0.0",
     "express": "^4.16.4",
-    "husky": "^2.3.0",
+    "express-formidable": "^1.2.0",
     "moment": "^2.24.0",
+    "moment-timezone": "^0.5.26",
     "morgan": "^1.9.1",
     "mysql": "^2.17.0",
     "node-agent-sdk": "^1.1.5",
     "request": "^2.88.0",
     "schm": "^0.4.1",
     "signale": "^1.4.0",
-    "swagger-ui-express": "^4.0.2"
+    "swagger-ui-express": "^4.0.2",
+    "yamljs": "^0.3.0"
   },
   "devDependencies": {
     "eslint": "^5.16.0",
     "eslint-config-airbnb-base": "^13.1.0",
-    "eslint-plugin-import": "^2.17.2"
+    "eslint-plugin-import": "^2.17.2",
+    "nodemon": "^1.19.1"
   }
 }

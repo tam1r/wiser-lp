@@ -11,12 +11,19 @@ function addClient(connection, credentials) {
     liveperson_accesstokensecret,
     webhooks,
   } = credentials;
-  const {
-    new_conversation_webhook,
-    new_file_in_conversation_webhook,
-    new_message_arrived_webhook,
-    coordinates_webhook,
-  } = webhooks;
+  let new_conversation_webhook = null;
+  let new_file_in_conversation_webhook = null;
+  let new_message_arrived_webhook = null;
+  let coordinates_webhook = null;
+
+  if (webhooks) {
+    ({
+      new_conversation_webhook,
+      new_file_in_conversation_webhook,
+      new_message_arrived_webhook,
+      coordinates_webhook,
+    } = webhooks);
+  }
 
   const query = `
     INSERT INTO

@@ -25,7 +25,7 @@ const { handleDisconnect, keepAlive, promisifyQuery } = require('./db/utils');
 const WiserAgent = require('./api/live-person/WiserAgent');
 const AgentsCluster = require('./service/AgentsCluster.js');
 const schemas = require('./schemas');
-const { log, delay } = require('./utils');
+const { log } = require('./utils');
 
 signale.config({
   displayFilename: true,
@@ -128,7 +128,7 @@ async function wiserLP() {
     }
   });
 
-  app.post('/register-client', async (req, res) => {
+  app.post('/register-client', (req, res) => new Promise(async (resolve) => {
     const validatedCredentials = await schema.validate(
       req.body,
       schemas.user.model,
@@ -137,13 +137,7 @@ async function wiserLP() {
       return res.status(400).send(error);
     });
 
-    // TODO: check if user with these credentials exist
-    // TODO: test if login successfull before adding to the db
-
-    // Add client to the database
-    db.addClient(connection, validatedCredentials);
-
-    // Init liveperson service for recently created user
+    let agent = null;
     const accountId = validatedCredentials.liveperson_accountid;
     const { webhooks } = validatedCredentials;
 
@@ -156,28 +150,35 @@ async function wiserLP() {
       accessToken: validatedCredentials.liveperson_accesstoken,
       accessTokenSecret: validatedCredentials.liveperson_accesstokensecret,
     };
-    try {
-      const agent = new WiserAgent(credentials, webhooks);
 
-      await delay(5000);
-
-      AgentsClusterService.agents[accountId] = agent;
+    const onSuccess = () => {
+      // TODO: check if user with these credentials exist
+      // TODO: test if login successfull before adding to the db
+      db.addClient(connection, validatedCredentials);
 
       signale.success(
         log.success('Successfully registered user with credentials:\n'),
         log.obj(credentials),
       );
 
-      return res
-        .contentType('application/json')
-        .status(200)
-        .send({ message: 'Register success', accountId });
-    } catch (error) {
-      return res
+      AgentsClusterService.agents[accountId] = agent;
+
+      resolve(
+        res
+          .contentType('application/json')
+          .status(200)
+          .send({ message: 'Register success', accountId }),
+      );
+    };
+
+    const onError = () => {
+      res
         .status(403)
         .send({ message: 'Invalid credentials' });
-    }
-  });
+    };
+
+    agent = new WiserAgent(credentials, webhooks, onSuccess, onError);
+  }));
   app.post('/register-client-form', formidable(), async (req, res) => {
     const validatedCredentials = await schema.validate(
       req.fields,

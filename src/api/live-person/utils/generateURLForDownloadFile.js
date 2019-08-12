@@ -13,7 +13,7 @@ function generateURLForDownloadFile(agent, relativePath) {
         const today = moment();
         const tomorrow = moment(today).add(1, 'days'); // eslint-disable-line
 
-        const fileURL = `http://z2.objectstorage.liveperson.net${relativePath}?temp_url_sig=${tmpUrlSig}&temp_url_expires=${tmpUrlExp}`;
+        const fileURL = `https://z2.objectstorage.liveperson.net${relativePath}?temp_url_sig=${tmpUrlSig}&temp_url_expires=${tmpUrlExp}`;
 
         resolve(fileURL);
       } else {

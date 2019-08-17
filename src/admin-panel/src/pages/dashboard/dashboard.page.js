@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Pane,
   Menu,
@@ -20,13 +20,11 @@ import Conversations from './conversations/conversations.content';
 const Dashboard = (props) => {
   const [user] = useState(JSON.parse(localStorage.getItem('user')) || null);
   const [currentPage, setCurrentPage] = useState(localStorage.getItem('currentPage') || 'home');
-  const configRef = useRef();
-  const conversationsRef = useRef();
 
   const pages = [
     { page: 'home', content: <Home user={user} /> },
-    { page: 'configuration', content: <Configuration user={user} ref={configRef} /> },
-    { page: 'conversations', content: <Conversations user={user} ref={conversationsRef} /> },
+    { page: 'configuration', content: <Configuration user={user} /> },
+    { page: 'conversations', content: <Conversations user={user} /> },
   ];
 
   useEffect(() => {

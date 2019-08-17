@@ -1,7 +1,6 @@
 import React, {
   useState,
   useEffect,
-  useCallback,
 } from 'react';
 import axios from 'axios';
 import {
@@ -23,32 +22,34 @@ const Configuration = (props) => {
 
   const [isUpdating, setIsUpdating] = useState(false);
   const [metadata, setMetadata] = useState([
-    { name: 'coordinates_webhook', label: 'Coordinates shared', description: 'Triggered whenever a user shares their geolocation', value: user.coordinates_webhook }, // eslint-disable-line
-    { name: 'new_conversation_webhook', label: 'New conversation', description: 'Triggered whenever there is a new conversation', value: user.new_conversation_webhook }, // eslint-disable-line
-    { name: 'new_file_in_conversation_webhook', label: 'File shared', description: 'Triggered whenever a user shares a media file', value: user.new_file_in_conversation }, // eslint-disable-line
-    { name: 'new_message_arrived_webhook', label: 'New message', description: 'Triggered whenever there is a new message', value: user.new_message_arrived_webhook }, // eslint-disable-line
+    { name: 'coordinates_webhook', label: 'Coordinates shared', description: 'Triggered whenever a user shares their geolocation', value: 'Loading...' }, // eslint-disable-line
+    { name: 'new_conversation_webhook', label: 'New conversation', description: 'Triggered whenever there is a new conversation', value: 'Loading...' }, // eslint-disable-line
+    { name: 'new_file_in_conversation_webhook', label: 'File shared', description: 'Triggered whenever a user shares a media file', value: 'Loading...' }, // eslint-disable-line
+    { name: 'new_message_arrived_webhook', label: 'New message', description: 'Triggered whenever there is a new message', value: 'Loading...' }, // eslint-disable-line
   ]);
 
-  const loadInfo = useCallback(
-    async () => {
-      const { data } = await axios.get(`/account-metadata?accountId=${accountId}`);
-      const { webhooks } = data;
+  const loadInfo = async () => {
+    const { data } = await axios.get(`/account-metadata?accountId=${accountId}`);
+    const { webhooks } = data;
 
-      if (webhooks.length > 0) {
-        const updatedMetadata = metadata.map(_metadata => ({
-          ..._metadata,
-          value: webhooks[_metadata.name],
-        }));
-
-        setMetadata(updatedMetadata);
-      }
-    },
-    [accountId], // eslint-disable-line
-  );
+    if (webhooks) {
+      const updatedMetadata = metadata.map(_metadata => ({
+        ..._metadata,
+        value: webhooks[_metadata.name],
+      }));
+      setMetadata(updatedMetadata);
+    } else {
+      const updatedMetadata = metadata.map(_metadata => ({
+        ..._metadata,
+        value: '',
+      }));
+      setMetadata(updatedMetadata);
+    }
+  };
 
   useEffect(() => {
     loadInfo();
-  }, [loadInfo]);
+  }, []);
 
   const saveChanges = async () => {
     setIsUpdating(true);
@@ -118,7 +119,7 @@ const Configuration = (props) => {
               <TextInputField
                 width="90%"
                 label={data.label}
-                defaultValue={user[data.name]}
+                value={data.value}
                 disabled={isUpdating}
                 onChange={({ target: { value } }) => {
                   const updatedMetadata = [...metadata];
@@ -145,6 +146,14 @@ const Configuration = (props) => {
         width={100}
       >
         { !isUpdating && 'Save' }
+      </Button>
+
+      <Button
+        appearance="primary"
+        onClick={loadInfo}
+        marginLeft={20}
+      >
+        Refresh
       </Button>
     </Pane>
   );

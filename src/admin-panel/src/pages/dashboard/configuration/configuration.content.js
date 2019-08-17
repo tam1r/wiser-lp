@@ -34,7 +34,7 @@ const Configuration = (props) => {
       const { data } = await axios.get(`/account-metadata?accountId=${accountId}`);
       const { webhooks } = data;
 
-      if (webhooks.length > 0) {
+      if (webhooks && webhooks.length > 0) {
         const updatedMetadata = metadata.map(_metadata => ({
           ..._metadata,
           value: webhooks[_metadata.name],

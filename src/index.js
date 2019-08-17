@@ -252,8 +252,6 @@ async function wiserLP() {
 
     try {
       // TODO: authenticate before updating
-      signale.info(`Disposng of ${accountId} account`);
-      AgentsClusterService.agents[accountId].dispose();
       await AgentsClusterService.updateAgent(validatedMetadata);
     } catch (error) {
       signale.fatal(error);
@@ -261,7 +259,6 @@ async function wiserLP() {
     }
 
     AgentsClusterService.agents[accountId].updateConf(validatedMetadata);
-    AgentsClusterService.agents[accountId].init();
     const consumerId = AgentsClusterService.agents[accountId].getConsumerId();
 
     signale.info(`Reconnecting ${accountId} account`);
@@ -297,8 +294,6 @@ async function wiserLP() {
 
     try {
       // TODO: authenticate before updating
-      signale.info(`Disposng of ${accountId} account`);
-      AgentsClusterService.agents[accountId].dispose();
       await AgentsClusterService.updateAgent(newMetadata);
     } catch (error) {
       signale.fatal(error);
@@ -307,7 +302,6 @@ async function wiserLP() {
 
     try {
       AgentsClusterService.agents[accountId].updateConf(validatedMetadata);
-      AgentsClusterService.agents[accountId].init();
       const consumerId = AgentsClusterService.agents[accountId].getConsumerId();
 
       signale.info(`Reconnecting ${accountId} account`);

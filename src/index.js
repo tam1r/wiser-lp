@@ -261,7 +261,7 @@ async function wiserLP() {
     AgentsClusterService.agents[accountId].updateConf(validatedMetadata);
     const consumerId = AgentsClusterService.agents[accountId].getConsumerId();
 
-    signale.info(`Reconnecting ${accountId} account`);
+    signale.info(`Successfully updated account ${accountId}`);
 
     return res
       .contentType('application/json')
@@ -304,7 +304,7 @@ async function wiserLP() {
       AgentsClusterService.agents[accountId].updateConf(validatedMetadata);
       const consumerId = AgentsClusterService.agents[accountId].getConsumerId();
 
-      signale.info(`Reconnecting ${accountId} account`);
+      signale.info(`Successfully updated account ${accountId}`);
 
       return res
         .contentType('application/json')

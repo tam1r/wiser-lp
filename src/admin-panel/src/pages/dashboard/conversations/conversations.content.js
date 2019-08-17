@@ -74,7 +74,7 @@ const Conversations = (props) => {
           appearance="primary"
           onClick={loadInfo}
         >
-          Reload
+          Refresh
         </Button>
       </Pane>
 

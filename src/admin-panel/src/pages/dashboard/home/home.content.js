@@ -4,7 +4,7 @@ import {
   Heading,
 } from 'evergreen-ui';
 
-const Home = (props) => {
+const Home = (props) => { // eslint-disable-line
   // const { user } = props;
 
   const today = new Date();

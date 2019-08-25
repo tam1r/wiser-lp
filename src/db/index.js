@@ -6,6 +6,7 @@ const {
   removeClient,
   handleDisconnect,
   keepAlive,
+  getClient,
 } = require('./utils');
 
 module.exports = {
@@ -16,4 +17,5 @@ module.exports = {
   removeClient,
   handleDisconnect,
   keepAlive,
+  getClient,
 };

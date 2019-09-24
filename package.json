@@ -25,15 +25,22 @@
   },
   "homepage": "https://github.com/tam1r/wiser-lp#readme",
   "dependencies": {
+<<<<<<< HEAD
     "@sentry/node": "^5.2.0",
     "axios": "^0.19.0",
+=======
+    "axios": "^0.18.0",
+>>>>>>> parent of 02dbdb4... Merge branch 'master' into staging
     "body-parser": "^1.18.3",
     "chalk": "^2.4.2",
     "concurrently": "^4.1.1",
     "cors": "^2.8.5",
     "dotenv": "^7.0.0",
     "express": "^4.16.4",
+<<<<<<< HEAD
     "express-formidable": "^1.2.0",
+=======
+>>>>>>> parent of 02dbdb4... Merge branch 'master' into staging
     "moment": "^2.24.0",
     "moment-timezone": "^0.5.26",
     "morgan": "^1.9.1",

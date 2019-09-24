@@ -2,8 +2,11 @@ require('dotenv').config();
 
 const formidable = require('express-formidable');
 const swagger = require('swagger-ui-express');
+<<<<<<< HEAD
 const bodyParser = require('body-parser');
 const sentry = require('@sentry/node');
+=======
+>>>>>>> parent of 02dbdb4... Merge branch 'master' into staging
 const express = require('express');
 const signale = require('signale');
 const morgan = require('morgan');
@@ -23,10 +26,11 @@ const app = express();
 const db = require('./db');
 const { handleDisconnect, keepAlive, promisifyQuery } = require('./db/utils');
 const WiserAgent = require('./api/live-person/WiserAgent');
-const AgentsCluster = require('./service/AgentsCluster.js');
+const initService = require('./initService');
 const schemas = require('./schemas');
 const { log } = require('./utils');
 
+<<<<<<< HEAD
 signale.config({
   displayFilename: true,
 });
@@ -36,6 +40,11 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 const PORT = 5000;
+=======
+const PORT = 3000;
+
+let agents;
+>>>>>>> parent of 02dbdb4... Merge branch 'master' into staging
 let connection;
 
 function keepAwake() {
@@ -48,6 +57,7 @@ function keepAwake() {
 
 async function wiserLP() {
   connection = await db.connect();
+<<<<<<< HEAD
   await db.setup(connection);
   handleDisconnect(connection);
 
@@ -56,6 +66,12 @@ async function wiserLP() {
   }
 
   const AgentsClusterService = new AgentsCluster(connection);
+=======
+
+  await db.setup(connection);
+  handleDisconnect(connection);
+  keepAlive(connection);
+>>>>>>> parent of 02dbdb4... Merge branch 'master' into staging
 
   app.use(morgan('tiny'));
   app.use(cors());
@@ -177,6 +193,7 @@ async function wiserLP() {
         .send({ message: 'Invalid credentials' });
     };
 
+<<<<<<< HEAD
     try {
       agent = new WiserAgent(credentials, webhooks, onSuccess, onError);
     } catch (e) {
@@ -196,10 +213,13 @@ async function wiserLP() {
     const accountId = validatedCredentials.liveperson_accountid;
     const { webhooks } = validatedCredentials;
 
+=======
+    // Init liveperson service for recently created user
+>>>>>>> parent of 02dbdb4... Merge branch 'master' into staging
     const credentials = {
-      accountId,
       username: validatedCredentials.username,
       password: validatedCredentials.liveperson_password,
+      accountId: validatedCredentials.liveperson_accountid,
       appKey: validatedCredentials.liveperson_appkey,
       secret: validatedCredentials.liveperson_secret,
       accessToken: validatedCredentials.liveperson_accesstoken,
@@ -292,6 +312,7 @@ async function wiserLP() {
       },
     };
 
+<<<<<<< HEAD
     try {
       // TODO: authenticate before updating
       await AgentsClusterService.updateAgent(newMetadata);
@@ -318,6 +339,11 @@ async function wiserLP() {
       signale.fatal(error);
       return res.status(500).send('There was an error while trying to update the Agent');
     }
+=======
+    agents[validatedCredentials.liveperson_accountid] = new WiserAgent(credentials, webhooks);
+    log.info(`Successfully registered user with credentials:\n ${log.object(credentials)}`);
+    res.status(200).send('Register success');
+>>>>>>> parent of 02dbdb4... Merge branch 'master' into staging
   });
 
   app.post('/send-message', async (req, res) => {
@@ -498,9 +524,13 @@ async function wiserLP() {
       return res.status(400).send('Missing accountId parameter');
     }
 
+<<<<<<< HEAD
     try {
       const domains = AgentsClusterService.agents[accountId].getDomains();
       const consumerId = AgentsClusterService.agents[accountId].getConsumerId();
+=======
+    const response = await agents[accountId].sendMessage(validatedMessage);
+>>>>>>> parent of 02dbdb4... Merge branch 'master' into staging
 
       return res
         .contentType('application/json')
@@ -606,11 +636,16 @@ async function wiserLP() {
   }
 
   app.listen(process.env.PORT || PORT, async () => {
+<<<<<<< HEAD
     signale.success(
       log.success(`Server listening on port ${process.env.PORT || PORT}!`),
       log.success('Documentation running under /docs'),
     );
     keepAwake();
+=======
+    log.success('Server listening on port 3000!');
+    agents = await initService(connection);
+>>>>>>> parent of 02dbdb4... Merge branch 'master' into staging
   });
 }
 

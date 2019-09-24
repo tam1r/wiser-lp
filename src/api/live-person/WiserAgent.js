@@ -1,8 +1,11 @@
 const signale = require('signale');
 const { Agent } = require('node-agent-sdk');
+<<<<<<< HEAD
 const Sentry = require('@sentry/node');
 const axios = require('axios');
 
+=======
+>>>>>>> parent of 02dbdb4... Merge branch 'master' into staging
 const { log, triggerWebhook } = require('../../utils');
 const Utils = require('./utils');
 
@@ -13,7 +16,6 @@ const reconnectRatio = 1.25; // ratio to determine reconnect exponential back-of
 class WiserAgent extends Agent {
   constructor(credentials, webhooks, onSuccess = null, onError = null) {
     super(credentials);
-    this.connecting = true;
     this.conf = credentials;
     this.webhooks = webhooks;
     this.consumerId = undefined;
@@ -160,6 +162,7 @@ class WiserAgent extends Agent {
     }
   }
 
+<<<<<<< HEAD
   async init() {
     await this.setDomains();
     await this.getTimezonePrefix();
@@ -184,6 +187,12 @@ class WiserAgent extends Agent {
       );
 
       this.signale = this.signale.scope(accountId);
+=======
+  init() {
+    this.on('connected', () => {
+      clearTimeout(this._retryConnection); // eslint-disablel
+      log.message(`Successfully connected agent with accountId: ${this.conf.accountId}`);
+>>>>>>> parent of 02dbdb4... Merge branch 'master' into staging
 
       this.setAgentState({ availability: 'ONLINE' }); // make the agent visibity to "online"
 
@@ -205,21 +214,6 @@ class WiserAgent extends Agent {
       this.subscribeRoutingTasks({});
 
       this.pingClock = setInterval(this.getClock, 30000); // keep alive connection strategy
-    });
-
-    this.on('routing.RoutingTaskNotification', (body) => {
-      body.changes.forEach((c) => {
-        if (c.type === 'UPSERT') {
-          c.result.ringsDetails.forEach((r) => {
-            if (r.ringState === 'WAITING') {
-              this.updateRingState({
-                ringId: r.ringId,
-                ringState: 'ACCEPTED',
-              }, (e, resp) => console.log(resp));
-            }
-          });
-        }
-      });
     });
 
     // Notification on changes in the open consversation list
@@ -409,30 +403,27 @@ class WiserAgent extends Agent {
     });
 
     this._reconnect = (delay = reconnectInterval, attempt = 1) => {
-      // implementation reference:
-      // https://github.com/LivePersonInc/node-agent-sdk#closed
+      this._retryConnection = setTimeout(() => {
+        log.info(`Attempting to reconnect agent ${this.conf.username} - attempt n ${attempt}`);
 
-      const { username: agent } = this.conf;
-      const nextDelay = delay * 1000;
-
+<<<<<<< HEAD
       if (this.connecting) {
         this._retryConnection = setTimeout(() => {
           this.signale.debug(
             log.warning(`Attempting to reconnect agent ${agent} | attempt ${attempt} | next delay ${nextDelay}`),
           );
+=======
+        this.reconnect();
+>>>>>>> parent of 02dbdb4... Merge branch 'master' into staging
 
-          if (this.connecting) {
-            this.reconnect();
-
-            if (++attempt <= reconnectAttempts) { // eslint-disable-line
-              this._reconnect(reconnectInterval * reconnectRatio, attempt);
-            }
-          }
-        }, nextDelay);
-      }
+        if (++attempt <= reconnectAttempts) { // eslint-disable-line
+          this._reconnect(reconnectInterval * reconnectRatio, attempt);
+        }
+      }, delay * 1000);
     };
 
     this.on('error', (error) => {
+<<<<<<< HEAD
       if (this.onError) {
         this.onError();
         this.onError = null;
@@ -452,8 +443,84 @@ class WiserAgent extends Agent {
     this.on('closed', () => {
       this.signale.fatal(new Error('Socket closed'));
       clearInterval(this.pingClock);
+=======
+      log.error('Error: ', error);
+      if (error && error.code === 401) {
+        this._reconnect();
+      }
+    });
+
+    this.on('closed', (data) => {
+      log.error('Socket closed: ', data);
+      clearInterval(this.pingClock);
+      this._reconnect();
+>>>>>>> parent of 02dbdb4... Merge branch 'master' into staging
     });
   }
 }
 
 module.exports = WiserAgent;
+<<<<<<< HEAD
+=======
+
+/*
+
+Reference Code:
+
+// Echo every unread consumer message and mark it as read
+// this.on('ms.MessagingEventNotification', (body) => {
+//   const respond = {};
+//   body.changes.forEach((c) => {
+//     // In the current version MessagingEventNotification
+//     // are recived also without subscription
+//     // Will be fixed in the next api version.
+//     // So we have to check if this notification is handled by us.
+//     if (openConversations[c.dialogId]) {
+//       // add to respond list all content event not by me
+//       if (c.event.type === 'ContentEvent' && c.originatorId !== this.agentId) {
+//         respond[`${body.dialogId}-${c.sequence}`] = {
+//           dialogId: body.dialogId,
+//           sequence: c.sequence,
+//           message: c.event.message,
+//         };
+//       }
+//       // remove from respond list all the messages that were already read
+//       if (c.event.type === 'AcceptStatusEvent' && c.originatorId === this.agentId) {
+//         c.event.sequenceList.forEach((seq) => {
+//           delete respond[`${body.dialogId}-${seq}`];
+//         });
+//       }
+//     }
+//   });
+//
+//   // publish read, and echo
+//   Object.keys(respond).forEach((key) => {
+//     const contentEvent = respond[key];
+//     this.publishEvent({
+//       dialogId: contentEvent.dialogId,
+//       event: {
+//         type: 'AcceptStatusEvent', status: 'READ', sequenceList: [contentEvent.sequence] },
+//     });
+//     this.emit(this.CONTENT_NOTIFICATION, contentEvent);
+//   });
+// });
+
+
+// Accept any routingTask (==ring)
+// this.on('routing.RoutingTaskNotification', (body) => {
+//   body.changes.forEach((c) => {
+//     if (c.type === 'UPSERT') {
+//       c.result.ringsDetails.forEach((r) => {
+//         if (r.ringState === 'WAITING') {
+//           this.updateRingState({
+//             ringId: r.ringId,
+//             ringState: 'ACCEPTED',
+//           }, (e, resp) => console.log(resp));
+//         }
+//       });
+//     }
+//   });
+// });
+
+*/
+>>>>>>> parent of 02dbdb4... Merge branch 'master' into staging

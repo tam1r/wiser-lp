@@ -17,12 +17,10 @@ DEV_DATABASE_NAME=${mysql database name}
 
 ## Upgrading in production environment
 
-1. Checkout that tests are passing (TODO: develop integration/e2e test)
-2. Insert the new columns in the production DB (if any)
+1. Insert the new columns in the production DB (if any)
   Example query to insert new columns:
   ```sql
   ALTER TABLE users ADD ${columnName} ${columnDefinition}
   ```
 
-3. Deploy by merging the staging branch to master
-4. Test everything
+2. Deploy by merging the staging branch to master

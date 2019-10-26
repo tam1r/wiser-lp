@@ -5,6 +5,7 @@ const addClient = require('./addClient');
 const removeClient = require('./removeClient');
 const handleDisconnect = require('./handleDisconnect');
 const keepAlive = require('./keepAlive');
+const getClient = require('./getClient');
 
 module.exports = {
   setup,
@@ -14,4 +15,5 @@ module.exports = {
   removeClient,
   handleDisconnect,
   keepAlive,
+  getClient,
 };

@@ -21,7 +21,12 @@ const docs = yaml.load(docsPath);
 const app = express();
 
 const db = require('./db');
-const { handleDisconnect, keepAlive, promisifyQuery } = require('./db/utils');
+const {
+  handleDisconnect,
+  promisifyQuery,
+  keepAlive,
+  getClient,
+} = require('./db/utils');
 const WiserAgent = require('./api/live-person/WiserAgent');
 const AgentsCluster = require('./service/AgentsCluster.js');
 const schemas = require('./schemas');
@@ -151,9 +156,13 @@ async function wiserLP() {
       accessTokenSecret: validatedCredentials.liveperson_accesstokensecret,
     };
 
+    const onError = () => {
+      res
+        .status(403)
+        .send({ message: 'Invalid credentials' });
+    };
+
     const onSuccess = () => {
-      // TODO: check if user with these credentials exist
-      // TODO: test if login successfull before adding to the db
       db.addClient(connection, validatedCredentials);
 
       signale.success(
@@ -171,16 +180,23 @@ async function wiserLP() {
       );
     };
 
-    const onError = () => {
+    try {
+      const client = await getClient(connection, accountId);
+      if (client.length === 0) {
+        try {
+          agent = new WiserAgent(credentials, webhooks, onSuccess, onError);
+        } catch (e) {
+          onError();
+        }
+      } else {
+        res
+          .status(403)
+          .send({ message: 'There is an existing account with that accountId!' });
+      }
+    } catch (error) {
       res
         .status(403)
-        .send({ message: 'Invalid credentials' });
-    };
-
-    try {
-      agent = new WiserAgent(credentials, webhooks, onSuccess, onError);
-    } catch (e) {
-      onError();
+        .send({ message: 'Something wrong happened. Status code WLP-195' });
     }
   }));
   app.post('/register-client-form', formidable(), (req, res) => new Promise(async (resolve) => {
@@ -206,9 +222,14 @@ async function wiserLP() {
       accessTokenSecret: validatedCredentials.liveperson_accesstokensecret,
     };
 
+    const onError = () => {
+      res
+        .status(403)
+        .send({ message: 'Invalid credentials' });
+    };
+
     const onSuccess = () => {
       // TODO: check if user with these credentials exist
-      // TODO: test if login successfull before adding to the db
       db.addClient(connection, validatedCredentials);
 
       signale.success(
@@ -226,16 +247,23 @@ async function wiserLP() {
       );
     };
 
-    const onError = () => {
+    try {
+      const client = await getClient(connection, accountId);
+      if (client.length === 0) {
+        try {
+          agent = new WiserAgent(credentials, webhooks, onSuccess, onError);
+        } catch (e) {
+          onError();
+        }
+      } else {
+        res
+          .status(403)
+          .send({ message: 'There is an existing account with that accountId!' });
+      }
+    } catch (error) {
       res
         .status(403)
-        .send({ message: 'Invalid credentials' });
-    };
-
-    try {
-      agent = new WiserAgent(credentials, webhooks, onSuccess, onError);
-    } catch (e) {
-      onError();
+        .send({ message: 'Something wrong happened. Status code WLP-195' });
     }
   }));
 
@@ -248,7 +276,7 @@ async function wiserLP() {
       return res.status(400).send(error);
     });
 
-    const { accountId } = validatedMetadata;
+    const { accountId, webhooks } = validatedMetadata;
 
     try {
       // TODO: authenticate before updating
@@ -258,7 +286,8 @@ async function wiserLP() {
       return res.status(500).send('There was an error while trying to update the Agent');
     }
 
-    AgentsClusterService.agents[accountId].updateConf(validatedMetadata);
+    // AgentsClusterService.agents[accountId].updateConf(validatedMetadata);
+    AgentsClusterService.agents[accountId].updateWebhooks(webhooks);
     const consumerId = AgentsClusterService.agents[accountId].getConsumerId();
 
     signale.info(`Successfully updated account ${accountId}`);
@@ -282,14 +311,15 @@ async function wiserLP() {
     });
 
     const { accountId } = validatedMetadata;
+    const webhooks = {
+      new_conversation_webhook: validatedMetadata.new_conversation_webhook || null,
+      new_file_in_conversation_webhook: validatedMetadata.new_file_in_conversation_webhook || null, // eslint-disable-line
+      new_message_arrived_webhook: validatedMetadata.new_message_arrived_webhook || null,
+      coordinates_webhook: validatedMetadata.coordinates_webhook || null,
+    };
     const newMetadata = {
       ...validatedMetadata,
-      webhooks: {
-        new_conversation_webhook: validatedMetadata.new_conversation_webhook || null,
-        new_file_in_conversation_webhook: validatedMetadata.new_file_in_conversation_webhook || null, // eslint-disable-line
-        new_message_arrived_webhook: validatedMetadata.new_message_arrived_webhook || null,
-        coordinates_webhook: validatedMetadata.coordinates_webhook || null,
-      },
+      webhooks,
     };
 
     try {
@@ -301,8 +331,9 @@ async function wiserLP() {
     }
 
     try {
-      AgentsClusterService.agents[accountId].updateConf(validatedMetadata);
+      // AgentsClusterService.agents[accountId].updateConf(validatedMetadata);
       const consumerId = AgentsClusterService.agents[accountId].getConsumerId();
+      AgentsClusterService.agents[accountId].updateWebhooks(webhooks);
 
       signale.info(`Successfully updated account ${accountId}`);
 
@@ -320,6 +351,7 @@ async function wiserLP() {
     }
   });
 
+  /* WIP */
   app.post('/send-message', async (req, res) => {
     const { credentials, message } = req.body;
 
@@ -576,7 +608,6 @@ async function wiserLP() {
       return res.status(400).send(error);
     }
   });
-
   app.get('/account-metadata', async (req, res) => {
     const { accountId } = req.query;
 

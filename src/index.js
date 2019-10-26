@@ -46,7 +46,7 @@ let connection;
 function keepAwake() {
   if (process.env.NODE_ENV === 'production') {
     setInterval(() => {
-      http.get('http://lpstaging.herokuapp.com/');
+      http.get('http://liveperson-zapier.herokuapp.com/');
     }, 100000);
   }
 }

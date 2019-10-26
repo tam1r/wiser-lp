@@ -223,9 +223,24 @@ paths:
         description: "liveperson account id"
         required: true
         type: "string"
-      - name: liveperson_password
+      - name: liveperson_appkey
         in: "form-data"
-        description: "liveperson account password"
+        description: "liveperson app key"
+        required: true
+        type: "string"
+      - name: liveperson_secret
+        in: "form-data"
+        description: "liveperson secret"
+        required: true
+        type: "string"
+      - name: liveperson_accesstoken
+        in: "form-data"
+        description: "liveperson access token"
+        required: true
+        type: "string"
+      - name: liveperson_accesstokensecret
+        in: "form-data"
+        description: "liveperson access token secret"
         required: true
         type: "string"
       - name: dialogId
@@ -388,7 +403,7 @@ definitions:
     - message
     properties:
       credentials:
-        "$ref": "#/definitions/User - Authentication with Password"
+        "$ref": "#/definitions/User - Authentication with Secret"
       message:
         type: object
         required:
@@ -405,8 +420,11 @@ definitions:
     example:
       credentials:
         username: john@doe.com
-        liveperson_accountid: '978654321'
-        liveperson_password: MySafePasswowrd1234
+        liveperson_accountid: '1234567890'
+        liveperson_appkey: '1234567890'
+        liveperson_secret: '1234567890'
+        liveperson_accesstoken: '1234567890'
+        liveperson_accesstokensecret: '1234567890'
       message:
         dialogId: ABCDE-12345-MNBVC-98765
         contentType: text/plain

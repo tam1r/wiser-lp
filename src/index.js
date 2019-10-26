@@ -351,6 +351,7 @@ async function wiserLP() {
     }
   });
 
+  /* WIP */
   app.post('/send-message', async (req, res) => {
     const { credentials, message } = req.body;
 
@@ -607,7 +608,6 @@ async function wiserLP() {
       return res.status(400).send(error);
     }
   });
-
   app.get('/account-metadata', async (req, res) => {
     const { accountId } = req.query;
 

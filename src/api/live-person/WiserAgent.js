@@ -112,28 +112,26 @@ class WiserAgent extends Agent {
         const { startTs } = conversationDetails;
 
         const messageDetails = await Utils.extractMessageDetails(change);
-        // If key not found, value = undefined
-        const value = cache.get(messageDetails.relativePath || '');
+        // If key not found, cache_hit = undefined
+        const cache_hit = cache.get(messageDetails.relativePath || 0);
         const parsedConversationDetails = await Utils.extractConversationDetails(this, change);
 
         if (messageDetails.type === 'hosted/file') {
-          const key = messageDetails.relativePath;
-          cache.set(key, 1, 30);
+          cache.set(messageDetails.relativePath, 1, 30);
+          console.log(`cache_hit: ${cache_hit}`);
           const fileURL = await Utils.generateURLForDownloadFile(this, messageDetails.relativePath);
-          if (this.webhooks.new_file_in_conversation_webhook) {
-            if (!value) {
-              await triggerWebhook(this.webhooks.new_file_in_conversation_webhook, {
-                fileURL,
-                convId,
-                convDetails: parsedConversationDetails,
-              });
-              log.success(
-                `successfully triggered webhook: ${this.webhooks.new_file_in_conversation_webhook}
-                convId: ${convId}
-                accountId: ${this.conf.accountId}
-                convDetails: ${log.object(parsedConversationDetails)}`,
-              );
-            }
+          if (this.webhooks.new_file_in_conversation_webhook && !cache_hit) {
+            await triggerWebhook(this.webhooks.new_file_in_conversation_webhook, {
+              fileURL,
+              convId,
+              convDetails: parsedConversationDetails,
+            });
+            log.success(
+              `successfully triggered webhook: ${this.webhooks.new_file_in_conversation_webhook}
+              convId: ${convId}
+              accountId: ${this.conf.accountId}
+              convDetails: ${log.object(parsedConversationDetails)}`,
+            );
           }
           log.success(`Successfully generated download file URL!\nConvId:   ${convId}\nURL:      ${fileURL}`);
         }

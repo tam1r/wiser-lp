@@ -35,7 +35,7 @@
     "moment": "2.24.0",
     "morgan": "1.9.1",
     "mysql": "2.17.0",
-    "node-agent-sdk": "1.1.5",
+    "node-agent-sdk": "1.4.5",
     "node-cache": "5.1.2",
     "schm": "0.4.1",
     "swagger-ui-express": "4.0.2"

@@ -205,9 +205,11 @@ class WiserAgent extends Agent {
 
     this.on('error', (error) => {
       Sentry.captureException(error);
-      log.error('Error ', error);
+      console.log(error)
+      log.error('Error: ');
+      console.table(error)
 
-      if (error && error.code === 401) {
+      if (error && [401, 500].includes(error.code)) {
         this.connecting = true;
         this._reconnect();
       }

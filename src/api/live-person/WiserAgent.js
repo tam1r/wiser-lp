@@ -1,7 +1,10 @@
 const { Agent } = require('node-agent-sdk');
 const Sentry = require('@sentry/node');
+const NodeCache = require('node-cache');
 const { log, triggerWebhook } = require('../../utils');
 const Utils = require('./utils');
+
+const cache = new NodeCache();
 
 const reconnectInterval = 5; // seconds
 const reconnectAttempts = 35;
@@ -109,22 +112,28 @@ class WiserAgent extends Agent {
         const { startTs } = conversationDetails;
 
         const messageDetails = await Utils.extractMessageDetails(change);
+        // If key not found, value = undefined
+        const value = cache.get(messageDetails.relativePath || '');
         const parsedConversationDetails = await Utils.extractConversationDetails(this, change);
 
         if (messageDetails.type === 'hosted/file') {
+          const key = messageDetails.relativePath;
+          cache.set(key, 1, 30);
           const fileURL = await Utils.generateURLForDownloadFile(this, messageDetails.relativePath);
           if (this.webhooks.new_file_in_conversation_webhook) {
-            await triggerWebhook(this.webhooks.new_file_in_conversation_webhook, {
-              fileURL,
-              convId,
-              convDetails: parsedConversationDetails,
-            });
-            log.success(
-              `successfully triggered webhook: ${this.webhooks.new_file_in_conversation_webhook}
-              convId: ${convId}
-              accountId: ${this.conf.accountId}
-              convDetails: ${log.object(parsedConversationDetails)}`,
-            );
+            if (!value) {
+              await triggerWebhook(this.webhooks.new_file_in_conversation_webhook, {
+                fileURL,
+                convId,
+                convDetails: parsedConversationDetails,
+              });
+              log.success(
+                `successfully triggered webhook: ${this.webhooks.new_file_in_conversation_webhook}
+                convId: ${convId}
+                accountId: ${this.conf.accountId}
+                convDetails: ${log.object(parsedConversationDetails)}`,
+              );
+            }
           }
           log.success(`Successfully generated download file URL!\nConvId:   ${convId}\nURL:      ${fileURL}`);
         }

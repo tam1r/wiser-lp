@@ -113,14 +113,14 @@ class WiserAgent extends Agent {
 
         const messageDetails = await Utils.extractMessageDetails(change);
         // If key not found, cache_hit = undefined
-        const cache_hit = cache.get(messageDetails.relativePath || 0);
+        const cacheHit = cache.get(messageDetails.relativePath || 0);
         const parsedConversationDetails = await Utils.extractConversationDetails(this, change);
 
         if (messageDetails.type === 'hosted/file') {
           cache.set(messageDetails.relativePath, 1, 30);
-          console.log(`cache_hit: ${cache_hit}`);
+          console.log(`cacheHit: ${cacheHit}`);
           const fileURL = await Utils.generateURLForDownloadFile(this, messageDetails.relativePath);
-          if (this.webhooks.new_file_in_conversation_webhook && !cache_hit) {
+          if (this.webhooks.new_file_in_conversation_webhook && !cacheHit) {
             await triggerWebhook(this.webhooks.new_file_in_conversation_webhook, {
               fileURL,
               convId,

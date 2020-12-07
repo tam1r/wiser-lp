@@ -174,10 +174,11 @@ class WiserAgent extends Agent {
         } else if (change.type === 'DELETE') {
           // conversation was closed or transferred
           delete this.openConversations[convId];
-        } else {
-          // something else happened
-          log.message(`Unhandled event occured in conversation: ${convId}`);
         }
+        // else {
+        // something else happened
+        // log.message(`Unhandled event occured in conversation: ${convId}`);
+        // }
       });
     });
 
@@ -205,11 +206,11 @@ class WiserAgent extends Agent {
 
     this.on('error', (error) => {
       Sentry.captureException(error);
-      console.log(error)
-      log.error('Error: ');
-      console.table(error)
+      console.log(error);
+      // log.error('Error: ');
+      // console.table(error)
 
-      if (error && [401, 500].includes(error.code)) {
+      if (error && [401].includes(error.code)) {
         this.connecting = true;
         this._reconnect();
       }

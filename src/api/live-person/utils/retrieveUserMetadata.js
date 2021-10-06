@@ -5,8 +5,7 @@ const retrieveUserMetadata = (userProfile) => {
   let userLastname = '';
   const userPhonenumber = [];
 
-  log.info('User profile');
-  log.info(userProfile);
+  log.info(`User profile: ${log.object(userProfile)}`);
 
   if (userProfile) {
     userProfile.forEach((dataRow) => {
@@ -51,7 +50,7 @@ const retrieveUserMetadata = (userProfile) => {
     phonenumber: userPhonenumber === '' ? 'NOT FOUND' : userPhonenumber,
   };
 
-  log.info(metadata);
+  log.info(`User metadata ${log.object(metadata)}`);
 
   return metadata;
 };

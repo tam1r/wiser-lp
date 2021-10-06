@@ -133,7 +133,7 @@ class WiserAgent extends Agent {
               convDetails: ${log.object(parsedConversationDetails)}`,
             );
           }
-          log.success(`Successfully generated download file URL!\nConvId:   ${convId}\nURL:      ${fileURL}`);
+          log.success(`Successfully generated download file URL!\nConvId: ${convId}\nURL: ${fileURL}`);
         }
 
         if (
@@ -146,12 +146,12 @@ class WiserAgent extends Agent {
 
           if (this.webhooks.new_conversation_webhook) {
             await triggerWebhook(this.webhooks.new_conversation_webhook, parsedConversationDetails);
-            log.success(
-              `successfully triggered webhook: ${this.webhooks.new_conversation_webhook}
-              accountId: ${this.conf.accountId}
-              convId: ${convId}
-              convDetails: ${log.object(parsedConversationDetails)}`,
-            );
+            // log.success(
+            //   `successfully triggered webhook: ${this.webhooks.new_conversation_webhook}
+            //   accountId: ${this.conf.accountId}
+            //   convId: ${convId}
+            //   convDetails: ${log.object(parsedConversationDetails)}`,
+            // );
           }
 
           // This method is used to create a subscription for all of the Messaging Events in
@@ -169,7 +169,7 @@ class WiserAgent extends Agent {
           this.consumerId = change.result.conversationDetails.participants.filter(p => p.role === 'CONSUMER')[0].id;
 
           this.getUserProfile(this.consumerId, (e, profileResp) => {
-            console.log('consumer id changed: ', profileResp);
+            // console.log('consumer id changed: ', profileResp);
           });
         } else if (change.type === 'DELETE') {
           // conversation was closed or transferred

@@ -3,7 +3,7 @@ const chalk = require('chalk');
 const currentTime = () => chalk.gray(`> ${(new Date()).toGMTString()} | `);
 const object = (obj) => {
   if (typeof obj === 'object') {
-    return JSON.stringify(obj, null, 2);
+    return JSON.stringify(obj);
   }
 
   return obj;

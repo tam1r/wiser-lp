@@ -107,6 +107,7 @@ class WiserAgent extends Agent {
 
     // Notification on changes in the open consversation list
     this.on('cqm.ExConversationChangeNotification', (notificationBody) => {
+      log.info(`ExConversationChangeNotification: ${log.object(notificationBody)}`);
       notificationBody.changes.forEach(async (change) => {
         const { convId, conversationDetails } = change.result;
         const { startTs } = conversationDetails;

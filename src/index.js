@@ -81,6 +81,7 @@ let connection;
         res.status(400).send(error);
       });
 
+    log.message(`Validated credentials ${log.object(validatedCredentials)}`)
     const { liveperson_accountid: accountId } = validatedCredentials;
 
     const validatedMessage = await schema.validate(message, schemas.message)

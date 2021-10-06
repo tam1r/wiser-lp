@@ -9,6 +9,12 @@ function generateURLForDownloadFile(agent, relativePath) {
       }
 
       log.info('generate URL for download response');
+      if (response === 'Agent not allowed') {
+        log.error('Agent not allowed');
+        log.error(log.object(agent));
+        log.error(log.object(relativePath));
+        reject(response);
+      }
       log.info(log.object(response));
 
       if (typeof response === 'object') {

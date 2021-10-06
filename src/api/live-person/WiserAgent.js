@@ -119,7 +119,16 @@ class WiserAgent extends Agent {
         if (messageDetails.type === 'hosted/file') {
           cache.set(messageDetails.relativePath, 1, 30);
           console.log(`cacheHit: ${cacheHit}`);
-          const fileURL = await Utils.generateURLForDownloadFile(this, messageDetails.relativePath);
+
+          let fileURL;
+          try {
+            log.info(`Generate download: ${log.object({ consumerId: this.consumerId })}`)
+            fileURL = await Utils.generateURLForDownloadFile(this, messageDetails.relativePath);
+          } catch (error) {
+            log.error(`Error generating URL for download ${log.object(error)}`);
+            return;
+          }
+
           if (this.webhooks.new_file_in_conversation_webhook && !cacheHit) {
             await triggerWebhook(this.webhooks.new_file_in_conversation_webhook, {
               fileURL,

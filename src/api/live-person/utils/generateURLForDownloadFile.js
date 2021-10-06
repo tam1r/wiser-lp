@@ -5,13 +5,14 @@ function generateURLForDownloadFile(agent, relativePath) {
   return new Promise((resolve, reject) => {
     agent.generateURLForDownloadFile({ relativePath }, (error, response) => {
       if (error) {
+        log.error('Gen URL Error', error);
         reject(error);
       }
 
       log.info('generate URL for download response');
       if (response === 'Agent not allowed') {
-        log.error('Agent not allowed');
-        log.error(log.object(relativePath));
+        log.error('Agent not allowed', relativePath);
+        log.error('Error', error);
         reject(response);
       }
       log.info(log.object(response));

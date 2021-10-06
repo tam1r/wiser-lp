@@ -12,7 +12,7 @@ function generateURLForDownloadFile(agent, relativePath) {
       log.info(`generate URL for download response - ${relativePath}: ${log.object(response)}`);
       if (response === 'Agent not allowed') {
         log.error('Agent not allowed', relativePath);
-        log.error('Error', error);
+        log.error('Error ', error);
         reject(response);
       }
 

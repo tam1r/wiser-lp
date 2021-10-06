@@ -122,7 +122,7 @@ class WiserAgent extends Agent {
 
           let fileURL;
           try {
-            log.info(`Generate download: ${log.object({ consumerId: this.consumerId })}`)
+            log.info(`Generate download: ${log.object({ consumerId: this.consumerId, conf: this.conf })}`)
             fileURL = await Utils.generateURLForDownloadFile(this, messageDetails.relativePath);
           } catch (error) {
             log.error(`Error generating URL for download ${log.object(error)}`);

@@ -1,7 +1,12 @@
+const log = require('../../../utils/log');
+
 const retrieveUserMetadata = (userProfile) => {
   let userFirstname = '';
   let userLastname = '';
   const userPhonenumber = [];
+
+  log.info('User profile');
+  log.info(userProfile);
 
   if (userProfile) {
     userProfile.forEach((dataRow) => {
@@ -29,14 +34,26 @@ const retrieveUserMetadata = (userProfile) => {
           });
         }
       }
+
+      if (
+        userPhonenumber.length === 0 &&
+        dataRow.type === 'ctmrinfo' &&
+        !userPhonenumber.includes(dataRow.info.imei)
+      ) {
+        userPhonenumber.push(dataRow.info.imei);
+      }
     });
   }
 
-  return {
+  const metadata = {
     firstname: userFirstname === '' ? 'NOT FOUND' : userFirstname,
     lastname: userLastname === '' ? 'NOT FOUND' : userLastname,
     phonenumber: userPhonenumber === '' ? 'NOT FOUND' : userPhonenumber,
   };
+
+  log.info(metadata);
+
+  return metadata;
 };
 
 module.exports = retrieveUserMetadata;

@@ -44,7 +44,7 @@ class WiserAgent extends Agent {
               });
             }
 
-            log.message(`Send message response: ${log.object(response)}`);
+            // log.message(`Send message response: ${log.object(response)}`);
             resolve({
               code: 200,
               message: 'Message sent',
@@ -126,14 +126,14 @@ class WiserAgent extends Agent {
               convId,
               convDetails: parsedConversationDetails,
             });
-            log.success(
-              `successfully triggered webhook: ${this.webhooks.new_file_in_conversation_webhook}
-              convId: ${convId}
-              accountId: ${this.conf.accountId}
-              convDetails: ${log.object(parsedConversationDetails)}`,
-            );
+            // log.success(
+            //   `successfully triggered webhook: ${this.webhooks.new_file_in_conversation_webhook}
+            //   convId: ${convId}
+            //   accountId: ${this.conf.accountId}
+            //   convDetails: ${log.object(parsedConversationDetails)}`,
+            // );
           }
-          log.success(`Successfully generated download file URL!\nConvId: ${convId}\nURL: ${fileURL}`);
+          // log.success(`Successfully generated download file URL!\nConvId: ${convId}\nURL: ${fileURL}`);
         }
 
         if (

@@ -9,13 +9,12 @@ function generateURLForDownloadFile(agent, relativePath) {
         reject(error);
       }
 
-      log.info('generate URL for download response');
+      log.info(`generate URL for download response - ${relativePath}: ${log.object(response)}`);
       if (response === 'Agent not allowed') {
         log.error('Agent not allowed', relativePath);
         log.error('Error', error);
         reject(response);
       }
-      log.info(log.object(response));
 
       if (typeof response === 'object') {
         const { temp_url_sig: tmpUrlSig, temp_url_expires: tmpUrlExp } = response.queryParams;

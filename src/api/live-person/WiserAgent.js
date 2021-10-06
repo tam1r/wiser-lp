@@ -117,7 +117,7 @@ class WiserAgent extends Agent {
         const cacheHit = cache.get(messageDetails.relativePath || 0);
         const parsedConversationDetails = await Utils.extractConversationDetails(this, change);
 
-        if (messageDetails.type === 'hosted/file') {
+        if (messageDetails.type === 'hosted/file' && messageDetails.role === 'ASSIGNED_AGENT') {
           cache.set(messageDetails.relativePath, 1, 30);
           console.log(`cacheHit: ${cacheHit}`);
 

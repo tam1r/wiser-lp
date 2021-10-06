@@ -5,6 +5,9 @@ function extractMessageDetails(change) {
     const {
       convId,
       lastContentEventNotification: notification,
+      conversationDetails: {
+        __myRole: role
+      }
     } = change.result;
 
     if (notification) {
@@ -18,8 +21,8 @@ function extractMessageDetails(change) {
 
       if (contentType === 'hosted/file') {
         const { relativePath } = message;
-        log.info(`New media message: ${log.object({ conversationId: convId, dialogId: notification.dialogId, from: userId, relativePath})}`);
-        resolve({ type: contentType, relativePath });
+        log.info(`New media message: ${log.object({ conversationId: convId, dialogId: notification.dialogId, from: userId, relativePath, role})}`);
+        resolve({ type: contentType, relativePath, role });
       }
     }
   });

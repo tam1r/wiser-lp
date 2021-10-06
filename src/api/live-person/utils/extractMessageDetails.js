@@ -12,13 +12,13 @@ function extractMessageDetails(change) {
       const { contentType, message } = notification.event;
 
       if (contentType === 'text/plain') {
-        log.info(`New text message!\nConversation id: ${convId}\nDialogId: ${notification.dialogId}\nFrom userId: ${userId}\nMessage: ${message}`);
+        log.info(`New text message: ${log.object({ conversationId: convId, dialogId: notification.dialogId, from: userId, message})}`);
         resolve({ type: contentType });
       }
 
       if (contentType === 'hosted/file') {
         const { relativePath } = message;
-        log.info(`New media message!\nConversation id: ${convId}\nDialogId: ${notification.dialogId}\nFrom userId: ${userId}\nRelative Path: ${relativePath}`);
+        log.info(`New media message: ${log.object({ conversationId: convId, dialogId: notification.dialogId, from: userId, relativePath})}`);
         resolve({ type: contentType, relativePath });
       }
     }
